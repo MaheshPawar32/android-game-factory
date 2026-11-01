@@ -15,6 +15,8 @@ namespace Blockverse
         private LevelConfig config;
         private readonly List<PieceDragView> trayPieces = new List<PieceDragView>();
         private bool levelFinished;
+        private bool reviveUsed;
+        private GameObject pauseOverlay;
         private GameObject resultOverlay, menuOverlay;
         private bool vibrationEnabled;
         private GameAudio gameAudio;
@@ -69,6 +71,8 @@ namespace Blockverse
 
         public void StartLevel()
         {
+            Time.timeScale = 1f;
+            reviveUsed = false;
             levelFinished = false;
             if (resultOverlay != null) Destroy(resultOverlay);
             if (menuOverlay != null) Destroy(menuOverlay);
@@ -81,6 +85,7 @@ namespace Blockverse
             BuildBoard();
             GenerateTray();
             CreateMenuButton();
+            CreatePauseButton();
         }
 
         private void CreateMenuButton()
@@ -98,10 +103,67 @@ namespace Blockverse
             CreateOverlayText(go.transform, "MENU", 23, Vector2.zero, new Vector2(120, 60), Color.white);
         }
 
+
+        private void CreatePauseButton()
+        {
+            Canvas canvas = GetCanvas();
+            if (canvas == null || canvas.transform.Find("GamePauseButton") != null) return;
+            var go = new GameObject("GamePauseButton", typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(canvas.transform, false);
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1, 1); rect.anchorMax = new Vector2(1, 1);
+            rect.pivot = new Vector2(1, 1); rect.anchoredPosition = new Vector2(-190, -28);
+            rect.sizeDelta = new Vector2(125, 64);
+            go.GetComponent<Image>().color = new Color(.13f, .2f, .32f, 1);
+            go.GetComponent<Button>().onClick.AddListener(PauseGame);
+            CreateOverlayText(go.transform, "PAUSE", 22, Vector2.zero, new Vector2(120, 60), Color.white);
+        }
+
+        private void PauseGame()
+        {
+            if (levelFinished || pauseOverlay != null || menuOverlay != null) return;
+            Canvas canvas = GetCanvas();
+            if (canvas == null) return;
+            Time.timeScale = 0f;
+            pauseOverlay = CreateMenuOverlay(canvas, "PAUSED", "TAKE A BREATHER");
+            CreateOverlayButton(pauseOverlay.transform, "RESUME", new Vector2(0, 65), ResumeGame);
+            CreateOverlayButton(pauseOverlay.transform, "RESTART LEVEL", new Vector2(0, -45), () => { Time.timeScale = 1f; StartLevel(); });
+            CreateOverlayButton(pauseOverlay.transform, "MAIN MENU", new Vector2(0, -155), () => { Time.timeScale = 1f; if (pauseOverlay != null) Destroy(pauseOverlay); pauseOverlay = null; ShowMainMenu(); });
+        }
+
+        private void ResumeGame()
+        {
+            if (pauseOverlay != null) Destroy(pauseOverlay);
+            pauseOverlay = null;
+            Time.timeScale = 1f;
+        }
+
+        private void ReviveLevel()
+        {
+            if (reviveUsed || !levelFinished || coins < 50) return;
+            reviveUsed = true;
+            coins -= 50;
+            PlayerPrefs.SetInt("blockverse_coins", coins);
+            PlayerPrefs.Save();
+            if (resultOverlay != null) Destroy(resultOverlay);
+            resultOverlay = null;
+            levelFinished = false;
+            if (config.MoveLimit > 0 && movesUsed >= config.MoveLimit) config.MoveLimit += 3;
+            board.ClearRandomOccupied(5, randomSeed++);
+            foreach (var piece in trayPieces) if (piece != null) Destroy(piece.gameObject);
+            trayPieces.Clear();
+            GenerateTray();
+            RefreshBoardVisuals();
+            RefreshLabels();
+            if (hintLabel != null) hintLabel.text = "REVIVED! 5 CELLS CLEARED — KEEP GOING";
+        }
+
         private Canvas GetCanvas() => boardRoot != null ? boardRoot.GetComponentInParent<Canvas>() : null;
 
         private void ShowMainMenu()
         {
+            Time.timeScale = 1f;
+            if (pauseOverlay != null) { Destroy(pauseOverlay); pauseOverlay = null; }
             Canvas canvas = GetCanvas(); if (canvas == null) return;
             if (menuOverlay != null) Destroy(menuOverlay);
             menuOverlay = CreateMenuOverlay(canvas, "BLOCKVERSE", "BLOCK PUZZLE ADVENTURE");
@@ -556,6 +618,8 @@ namespace Blockverse
             CreateOverlayText(card.transform, heading, 48, new Vector2(0, 145), new Vector2(760, 90), new Color(1, .82f, .35f));
             CreateOverlayText(card.transform, message, 28, new Vector2(0, 25), new Vector2(760, 150), Color.white);
             CreateOverlayButton(card.transform, won ? "NEXT LEVEL" : "RETRY", new Vector2(0, -115), won ? (UnityEngine.Events.UnityAction)GoToNextLevel : StartLevel);
+            if (!won && !reviveUsed && coins >= 50)
+                CreateOverlayButton(card.transform, "REVIVE • 50 COINS", new Vector2(0, -215), ReviveLevel);
         }
 
         private void CreateOverlayText(Transform parent, string value, int size, Vector2 position, Vector2 dimensions, Color color)
