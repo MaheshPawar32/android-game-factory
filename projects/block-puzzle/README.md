@@ -1,23 +1,47 @@
-# Block Puzzle — MVP
+# BLOCKVERSE — Godot Android Game
 
-A portrait-first Godot 4 puzzle game prototype.
+**Tagline:** PLACE. CLEAR. COMBO. CONQUER.
 
-## Current gameplay
-- 10 × 10 placement grid.
-- Three shape choices per round.
-- Select a shape, then tap a board cell to place it.
-- Complete full rows and columns to clear them.
-- Score, combo multiplier, best score for the current app session, and game-over detection.
-- Restart button.
+BLOCKVERSE is a portrait-first, offline block puzzle game built with **Godot 4.4 and GDScript**. Flutter is not used.
 
-## Open in Godot
-Open this folder in Godot 4.4.x:
-`projects/block-puzzle/project.godot`
+## Project configuration
 
-## Current limitations
-This is the first playable prototype. It uses tap-to-select and tap-to-place rather than drag-and-drop. Best score is currently session-only. Audio, haptics, persistence, tutorial, progression, special blocks, daily challenges, monetization, and release signing are planned for later milestones.
+- Platform: Android
+- Engine: Godot 4.4.x
+- Language: GDScript
+- Package ID target: `com.dev.blockverse`
+- Rendering: Compatibility (mobile-friendly baseline)
+- Orientation: Portrait
+- Save system: Local versioned ConfigFile (`user://blockverse_save.cfg`)
+- No login or backend required
+
+## Open the project
+
+Open `projects/block-puzzle/project.godot` in Godot 4.4.x.
+
+## Current foundation (Batch 1)
+
+- BLOCKVERSE app identity and portrait project settings.
+- Premium dark theme tokens based on the supplied 25-screen storyboard.
+- Home screen and mode-selection navigation.
+- Classic mode opens the existing playable 10×10 prototype.
+- Local save layer with defaults, settings, coins, player progression placeholders, and schema version.
+- Central scene router.
+
+## Current implementation status
+
+The classic board is an early prototype. The other modes, 100 levels, special blocks, drag-and-drop, progression, ads, audio, notifications, and full screen set are not yet implemented. Buttons for later features are explicitly marked as planned rather than pretending those features are complete.
+
+## Next milestones
+
+1. Core game engine extracted into testable GDScript models.
+2. Accurate drag-and-drop and board interaction.
+3. Special blocks, scoring, combos, and effects.
+4. Game flow screens and six modes.
+5. Adventure progression, missions, achievements, inventory, and themes.
+6. Audio, haptics, notifications, and optional AdMob integration.
+7. Android export, performance testing, and release validation.
 
 ## Android export
-Create an Android export preset named `Android` in Godot and configure the SDK/export templates for the matching Godot version. The repository workflow can then be run with:
-- project_path: `projects/block-puzzle`
-- export_preset: `Android`
+
+Set the Android package identifier to `com.dev.blockverse` in the Godot Android export preset. Configure the Android SDK and matching Godot export templates before building.
