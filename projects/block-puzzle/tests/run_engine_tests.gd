@@ -101,18 +101,18 @@ func _test_scoring() -> void:
 
 func _test_special_effect_bounds() -> void:
 	var board = Board.new(10)
-	var cells: Array[Vector2i] = Specials.bomb_cells(board, Vector2i.ZERO)
+	var cells: Array[Vector2i] = BlockverseSpecialResolver.bomb_cells(board, Vector2i.ZERO)
 	_check(cells.size() == 4, "corner bomb clips its 3x3 area to board bounds")
-	var center_cells: Array[Vector2i] = Specials.bomb_cells(board, Vector2i(5, 5))
+	var center_cells: Array[Vector2i] = BlockverseSpecialResolver.bomb_cells(board, Vector2i(5, 5))
 	_check(center_cells.size() == 9, "center bomb returns a 3x3 area")
 
 func _test_rainbow_line() -> void:
 	var board = Board.new()
 	board.cells[2][0] = 1
 	board.cells[2][4] = 2
-	var cells: Array[Vector2i] = Specials.rainbow_line_cells(board, true, 2)
+	var cells: Array[Vector2i] = BlockverseSpecialResolver.rainbow_line_cells(board, true, 2)
 	_check(cells.size() == 2, "rainbow returns occupied cells in chosen row")
-	_check(Specials.rainbow_line_cells(board, false, 12).is_empty(), "rainbow rejects invalid line index")
+	_check(BlockverseSpecialResolver.rainbow_line_cells(board, false, 12).is_empty(), "rainbow rejects invalid line index")
 
 func _test_lightning_connectivity() -> void:
 	var board = Board.new()
@@ -120,7 +120,7 @@ func _test_lightning_connectivity() -> void:
 	board.cells[1][2] = 1
 	board.cells[2][2] = 1
 	board.cells[8][8] = 1
-	var cells: Array[Vector2i] = Specials.lightning_connected_cells(board, Vector2i(1, 1))
+	var cells: Array[Vector2i] = BlockverseSpecialResolver.lightning_connected_cells(board, Vector2i(1, 1))
 	_check(cells.size() == 3, "lightning finds connected orthogonal cluster only")
 
 func _test_special_resolution() -> void:
@@ -128,13 +128,13 @@ func _test_special_resolution() -> void:
 	for y in range(3, 8):
 		for x in range(3, 8):
 			bomb_board.cells[y][x] = 1
-	var bomb: Dictionary = Specials.resolve(bomb_board, "bomb", Vector2i(5, 5))
+	var bomb: Dictionary = BlockverseSpecialResolver.resolve(bomb_board, "bomb", Vector2i(5, 5))
 	_check(bomb.cells.size() == 9 and bomb_board.get_cell(5, 5) == Board.EMPTY, "bomb clears bounded 3x3 board area")
 
 	var rainbow_board = Board.new(10)
 	for x in range(rainbow_board.size):
 		rainbow_board.cells[4][x] = 2
-	var rainbow: Dictionary = Specials.resolve(rainbow_board, "rainbow", Vector2i(2, 4))
+	var rainbow: Dictionary = BlockverseSpecialResolver.resolve(rainbow_board, "rainbow", Vector2i(2, 4))
 	_check(rainbow.cells.size() == rainbow_board.size and rainbow_board.get_cell(0, 4) == Board.EMPTY, "rainbow clears its selected row")
 
 	var lightning_board = Board.new(10)
@@ -142,12 +142,12 @@ func _test_special_resolution() -> void:
 	lightning_board.cells[1][2] = 1
 	lightning_board.cells[2][2] = 1
 	lightning_board.cells[8][8] = 1
-	var lightning: Dictionary = Specials.resolve(lightning_board, "lightning", Vector2i(1, 1))
+	var lightning: Dictionary = BlockverseSpecialResolver.resolve(lightning_board, "lightning", Vector2i(1, 1))
 	_check(lightning.cells.size() == 3 and lightning_board.get_cell(2, 2) == Board.EMPTY, "lightning clears connected cluster only")
 
 	var treasure_board = Board.new()
 	treasure_board.cells[0][0] = 3
-	var treasure: Dictionary = Specials.resolve(treasure_board, "treasure", Vector2i(0, 0))
+	var treasure: Dictionary = BlockverseSpecialResolver.resolve(treasure_board, "treasure", Vector2i(0, 0))
 	_check(treasure.coins == 25 and treasure_board.get_cell(0, 0) == 3, "treasure awards coins without clearing board")
 
 func _test_special_generator_distribution() -> void:
