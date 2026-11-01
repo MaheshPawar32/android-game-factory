@@ -11,9 +11,13 @@ const SHAPES := [
 	[Vector2i(0, 0), Vector2i(0, 1), Vector2i(0, 2)],
 	[Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0), Vector2i(1, 1)]
 ]
+const EMPTY := -1
+const STONE := -2
+const ICE := -3
 
 var board: Array = []
-var tray_shapes: Array = []
+var obstacle_hp: Array = []
+var tray_pieces: Array = []
 var selected_piece := -1
 var score := 0
 var best_score := 0
@@ -23,6 +27,7 @@ var score_label: Label
 var status_label: Label
 
 func _ready() -> void:
+	randomize()
 	_build_board()
 	_build_ui()
 	_new_game()
@@ -77,6 +82,12 @@ func _build_ui() -> void:
 	board_grid.add_theme_constant_override("v_separation", 4)
 	board_panel.add_child(board_grid)
 
+	var legend := Label.new()
+	legend.text = "🪨 Stone: 1 hit     ❄ Ice: 2 hits"
+	legend.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	legend.add_theme_color_override("font_color", Color("#aab6d3"))
+	root.add_child(legend)
+
 	var tray_title := Label.new()
 	tray_title.text = "YOUR PIECES"
 	tray_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -97,25 +108,37 @@ func _build_ui() -> void:
 
 func _build_board() -> void:
 	board.clear()
+	obstacle_hp.clear()
 	for y in range(BOARD_SIZE):
 		var row: Array = []
+		var hp_row: Array = []
 		for x in range(BOARD_SIZE):
-			row.append(-1)
+			row.append(EMPTY)
+			hp_row.append(0)
 		board.append(row)
+		obstacle_hp.append(hp_row)
 
 func _refresh_board() -> void:
 	for child in board_grid.get_children():
 		child.queue_free()
 	for y in range(BOARD_SIZE):
 		for x in range(BOARD_SIZE):
+			var value: int = board[y][x]
 			var cell := Button.new()
 			cell.custom_minimum_size = Vector2(1, 1)
 			cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			cell.size_flags_vertical = Control.SIZE_EXPAND_FILL
 			cell.focus_mode = Control.FOCUS_NONE
-			cell.text = ""
+			cell.text = "🪨" if value == STONE else ("❄%d" % obstacle_hp[y][x] if value == ICE else "")
 			var style := StyleBoxFlat.new()
-			style.bg_color = Color("#202d49") if board[y][x] < 0 else COLORS[board[y][x] % COLORS.size()]
+			if value == STONE:
+				style.bg_color = Color("#626b7d")
+			elif value == ICE:
+				style.bg_color = Color("#78c9ef")
+			elif value >= 0:
+				style.bg_color = COLORS[value % COLORS.size()]
+			else:
+				style.bg_color = Color("#202d49")
 			style.set_corner_radius_all(5)
 			cell.add_theme_stylebox_override("normal", style)
 			cell.add_theme_stylebox_override("hover", style)
@@ -126,12 +149,15 @@ func _refresh_board() -> void:
 func _refresh_tray() -> void:
 	for child in tray_container.get_children():
 		child.queue_free()
-	for i in range(tray_shapes.size()):
+	for i in range(tray_pieces.size()):
+		var piece: Dictionary = tray_pieces[i]
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(90, 96)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.text = _shape_preview(tray_shapes[i])
-		button.add_theme_font_size_override("font_size", 20)
+		button.text = _shape_preview(piece.shape)
+		if piece.special != "":
+			button.text += "\n" + _special_icon(piece.special)
+		button.add_theme_font_size_override("font_size", 18)
 		button.pressed.connect(_select_piece.bind(i))
 		tray_container.add_child(button)
 	_update_score()
@@ -149,52 +175,115 @@ func _shape_preview(shape: Array) -> String:
 		output += "\n"
 	return output
 
+func _special_icon(kind: String) -> String:
+	match kind:
+		"bomb": return "💣 BOMB"
+		"rainbow": return "🌈 ROW"
+		"lightning": return "⚡ COLUMN"
+	return ""
+
 func _new_game() -> void:
 	_build_board()
 	score = 0
 	selected_piece = -1
+	_seed_obstacles()
 	_generate_tray()
 	_refresh_board()
 	_refresh_tray()
 	status_label.text = "Choose a piece, then tap the board"
 
+func _seed_obstacles() -> void:
+	# Fixed starter layout makes early obstacle testing repeatable.
+	board[2][2] = STONE
+	board[5][5] = STONE
+	board[2][5] = ICE
+	obstacle_hp[2][5] = 2
+
 func _generate_tray() -> void:
-	tray_shapes.clear()
+	tray_pieces.clear()
 	for i in range(3):
-		tray_shapes.append(SHAPES[randi() % SHAPES.size()].duplicate())
+		var special := ""
+		var roll := randi() % 20
+		if roll == 0:
+			special = "bomb"
+		elif roll == 1:
+			special = "rainbow"
+		elif roll == 2:
+			special = "lightning"
+		tray_pieces.append({"shape": SHAPES[randi() % SHAPES.size()].duplicate(), "special": special})
 
 func _select_piece(index: int) -> void:
-	if index >= 0 and index < tray_shapes.size():
+	if index >= 0 and index < tray_pieces.size():
 		selected_piece = index
-		status_label.text = "Piece %d selected — tap its starting cell" % (index + 1)
+		var kind: String = tray_pieces[index].special
+		status_label.text = "Selected %s — tap a starting cell" % (_special_icon(kind) if kind != "" else "piece")
 
 func _on_cell_pressed(x: int, y: int) -> void:
-	if selected_piece < 0 or selected_piece >= tray_shapes.size():
+	if selected_piece < 0 or selected_piece >= tray_pieces.size():
 		status_label.text = "Select a piece first"
 		return
-	var shape: Array = tray_shapes[selected_piece]
+	var piece: Dictionary = tray_pieces[selected_piece]
+	var shape: Array = piece.shape
 	if not _can_place(shape, x, y):
 		status_label.text = "That piece doesn't fit there"
 		return
 	for p in shape:
 		board[y + p.y][x + p.x] = selected_piece % COLORS.size()
-	score += shape.size()
+		score += 1
+	_apply_special(piece.special, x, y)
 	_clear_completed_lines()
-	tray_shapes.remove_at(selected_piece)
+	tray_pieces.remove_at(selected_piece)
 	selected_piece = -1
-	if tray_shapes.is_empty():
+	if tray_pieces.is_empty():
 		_generate_tray()
 	_refresh_board()
 	_refresh_tray()
-	status_label.text = "Nice move! Choose your next piece"
+	if _has_obstacles():
+		status_label.text = "Good move! Clear the remaining obstacles"
+	else:
+		status_label.text = "Board clear! Keep scoring"
 
 func _can_place(shape: Array, origin_x: int, origin_y: int) -> bool:
 	for p in shape:
 		var x := origin_x + p.x
 		var y := origin_y + p.y
-		if x < 0 or y < 0 or x >= BOARD_SIZE or y >= BOARD_SIZE or board[y][x] >= 0:
+		if x < 0 or y < 0 or x >= BOARD_SIZE or y >= BOARD_SIZE or board[y][x] != EMPTY:
 			return false
 	return true
+
+func _apply_special(kind: String, x: int, y: int) -> void:
+	match kind:
+		"bomb":
+			for by in range(maxi(0, y - 1), mini(BOARD_SIZE, y + 2)):
+				for bx in range(maxi(0, x - 1), mini(BOARD_SIZE, x + 2)):
+					_damage_obstacle(bx, by)
+					if board[by][bx] >= 0:
+						board[by][bx] = EMPTY
+			score += 50
+			status_label.text = "💣 Bomb blast!"
+		"rainbow":
+			for bx in range(BOARD_SIZE):
+				_damage_obstacle(bx, y)
+				if board[y][bx] >= 0:
+					board[y][bx] = EMPTY
+			score += 50
+			status_label.text = "🌈 Rainbow row cleared!"
+		"lightning":
+			for by in range(BOARD_SIZE):
+				_damage_obstacle(x, by)
+				if board[by][x] >= 0:
+					board[by][x] = EMPTY
+			score += 50
+			status_label.text = "⚡ Lightning column cleared!"
+
+func _damage_obstacle(x: int, y: int) -> void:
+	if board[y][x] == STONE:
+		board[y][x] = EMPTY
+	elif board[y][x] == ICE:
+		obstacle_hp[y][x] -= 1
+		if obstacle_hp[y][x] <= 0:
+			board[y][x] = EMPTY
+			obstacle_hp[y][x] = 0
 
 func _clear_completed_lines() -> void:
 	var rows: Array[int] = []
@@ -202,7 +291,7 @@ func _clear_completed_lines() -> void:
 	for y in range(BOARD_SIZE):
 		var full := true
 		for x in range(BOARD_SIZE):
-			if board[y][x] < 0:
+			if board[y][x] == EMPTY:
 				full = false
 				break
 		if full:
@@ -210,22 +299,34 @@ func _clear_completed_lines() -> void:
 	for x in range(BOARD_SIZE):
 		var full := true
 		for y in range(BOARD_SIZE):
-			if board[y][x] < 0:
+			if board[y][x] == EMPTY:
 				full = false
 				break
 		if full:
 			columns.append(x)
 	for y in rows:
 		for x in range(BOARD_SIZE):
-			board[y][x] = -1
+			_damage_obstacle(x, y)
+			if board[y][x] >= 0:
+				board[y][x] = EMPTY
 	for x in columns:
 		for y in range(BOARD_SIZE):
-			board[y][x] = -1
+			_damage_obstacle(x, y)
+			if board[y][x] >= 0:
+				board[y][x] = EMPTY
 	var cleared := rows.size() + columns.size()
 	score += cleared * 100
 	if cleared > 0:
 		status_label.text = "Line cleared! +%d" % (cleared * 100)
 
+func _has_obstacles() -> bool:
+	for y in range(BOARD_SIZE):
+		for x in range(BOARD_SIZE):
+			if board[y][x] == STONE or board[y][x] == ICE:
+				return true
+	return false
+
 func _update_score() -> void:
 	if score_label:
+		best_score = maxi(best_score, score)
 		score_label.text = "SCORE  %d     BEST  %d" % [score, best_score]
