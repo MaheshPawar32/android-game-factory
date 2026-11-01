@@ -195,3 +195,16 @@ GitHub Actions headless engine tests and Android export are being run against th
 ### Batch 8 validation
 
 Godot headless tests and Android APK export run automatically on pushes. The latest runs should be checked in GitHub Actions before treating this batch as validated.
+
+
+## Batch 9 — Four playable modes
+
+- Daily Challenge uses a deterministic date-based piece seed and a 600-point target; the same local date produces the same piece sequence.
+- Zen removes game-over pressure and replenishes the tray when no legal move remains.
+- Combo Rush targets a 5× line-clear streak and ends after three non-clearing turns.
+- Time Attack runs a 90-second countdown and records the best score locally.
+- Mode selection now launches each implemented mode instead of showing a coming-soon dialog.
+- Local mode records are persisted in save schema version 4.
+
+### Validation
+Source committed and retrieved from GitHub. Godot runtime parsing, deterministic replay, timer behavior, and Android interaction remain unverified until the GitHub Actions runs complete and the project is exercised in Godot 4.4.
