@@ -108,7 +108,8 @@ namespace Blockverse
             CreateOverlayButton(menuOverlay.transform, "PLAY", new Vector2(0, 95), () => { Destroy(menuOverlay); menuOverlay = null; });
             CreateOverlayButton(menuOverlay.transform, "LEVEL SELECT", new Vector2(0, -15), ShowLevelSelect);
             CreateOverlayButton(menuOverlay.transform, "DAILY REWARD", new Vector2(0, -125), ClaimDailyReward);
-            CreateOverlayButton(menuOverlay.transform, "SETTINGS", new Vector2(0, -235), ShowSettings);
+            CreateOverlayButton(menuOverlay.transform, "SHOP", new Vector2(0, -235), ShowShop);
+            CreateOverlayButton(menuOverlay.transform, "SETTINGS", new Vector2(0, -345), ShowSettings);
         }
 
         private GameObject CreateMenuOverlay(Canvas canvas, string title, string subtitle)
@@ -155,6 +156,61 @@ namespace Blockverse
             PlayerPrefs.SetString("blockverse_daily_date", today); PlayerPrefs.SetInt("blockverse_daily_streak", streak);
             PlayerPrefs.SetInt("blockverse_coins", coins); PlayerPrefs.Save(); RefreshLabels();
             ShowMessage("DAILY REWARD!", $"DAY {streak} STREAK\n+{reward} COINS");
+        }
+
+        private static readonly string[] ThemeNames = { "OCEAN", "EMBER", "FOREST", "VIOLET" };
+        private static readonly int[] ThemeCosts = { 0, 150, 250, 350 };
+        private static readonly Color[] ThemeColors =
+        {
+            new Color(.28f, .68f, 1f),
+            new Color(1f, .43f, .22f),
+            new Color(.3f, .82f, .52f),
+            new Color(.72f, .48f, 1f)
+        };
+
+        private bool OwnsTheme(int index) => index == 0 || PlayerPrefs.GetInt("blockverse_theme_owned_" + index, 0) == 1;
+
+        private void ShowShop()
+        {
+            Canvas canvas = GetCanvas(); if (canvas == null) return;
+            if (menuOverlay != null) Destroy(menuOverlay);
+            menuOverlay = CreateMenuOverlay(canvas, "BLOCK SHOP", $"COINS: {coins}  •  CHOOSE YOUR BLOCK STYLE");
+            int equipped = PlayerPrefs.GetInt("blockverse_theme", 0);
+            for (int i = 0; i < ThemeNames.Length; i++)
+            {
+                int index = i, col = i % 2, row = i / 2;
+                bool owned = OwnsTheme(i);
+                bool selected = equipped == i;
+                string action = selected ? "EQUIPPED" : owned ? "EQUIP" : ThemeCosts[i] + " COINS";
+                var go = new GameObject("Theme_" + i, typeof(RectTransform), typeof(Image), typeof(Button));
+                go.transform.SetParent(menuOverlay.transform, false);
+                var rect = go.GetComponent<RectTransform>(); rect.sizeDelta = new Vector2(310, 190);
+                rect.anchoredPosition = new Vector2(col == 0 ? -170 : 170, 80 - row * 220);
+                go.GetComponent<Image>().color = new Color(.1f, .16f, .25f, 1);
+                var button = go.GetComponent<Button>(); button.interactable = !selected;
+                button.onClick.AddListener(() => PurchaseOrEquipTheme(index));
+                CreateOverlayText(go.transform, ThemeNames[index] + "\n" + action, 25, Vector2.zero, new Vector2(300, 180), ThemeColors[index]);
+            }
+            CreateOverlayButton(menuOverlay.transform, "BACK", new Vector2(0, -250), ShowMainMenu);
+        }
+
+        private void PurchaseOrEquipTheme(int index)
+        {
+            if (index < 0 || index >= ThemeNames.Length) return;
+            if (!OwnsTheme(index))
+            {
+                if (coins < ThemeCosts[index]) { ShowMessage("NOT ENOUGH COINS", "Clear more lines and claim daily rewards."); return; }
+                coins -= ThemeCosts[index];
+                PlayerPrefs.SetInt("blockverse_theme_owned_" + index, 1);
+                PlayerPrefs.SetInt("blockverse_coins", coins);
+            }
+            PlayerPrefs.SetInt("blockverse_theme", index);
+            PlayerPrefs.Save();
+            RefreshLabels();
+            RefreshBoardVisuals();
+            foreach (var piece in trayPieces)
+                if (piece != null && piece.gameObject.activeSelf) piece.RefreshTheme();
+            ShowShop();
         }
 
         private void ShowSettings()
