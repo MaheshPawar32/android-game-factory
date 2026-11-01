@@ -1,6 +1,7 @@
 extends Control
 
 var list: VBoxContainer
+var coin_label: Label
 
 func _ready() -> void:
 	_build()
@@ -28,12 +29,12 @@ func _build() -> void:
 	title.add_theme_color_override("font_color", BlockverseTheme.TEXT_PRIMARY)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
-	var coins := Label.new()
-	coins.name = "CoinBalance"
-	coins.text = "🪙 %d" % int(SaveData.get_value("coins", 0))
-	coins.add_theme_color_override("font_color", BlockverseTheme.GOLD)
-	coins.add_theme_font_size_override("font_size", 18)
-	header.add_child(coins)
+	coin_label = Label.new()
+	coin_label.name = "CoinBalance"
+	coin_label.text = "🪙 %d" % int(SaveData.get_value("coins", 0))
+	coin_label.add_theme_color_override("font_color", BlockverseTheme.GOLD)
+	coin_label.add_theme_font_size_override("font_size", 18)
+	header.add_child(coin_label)
 	var back := Button.new()
 	back.text = "⌂"
 	back.custom_minimum_size = Vector2(48, 46)
@@ -59,7 +60,7 @@ func _refresh() -> void:
 	for skin_id in SaveData.BOARD_SKINS:
 		var skin: Dictionary = SaveData.BOARD_SKINS[skin_id]
 		var owned := SaveData.owns_skin(skin_id)
-		var selected := SaveData.selected_skin() == skin_id
+		var selected: bool = SaveData.selected_skin() == skin_id
 		var card := PanelContainer.new()
 		var style := StyleBoxFlat.new()
 		style.bg_color = BlockverseTheme.SURFACE
@@ -102,9 +103,8 @@ func _refresh() -> void:
 		caption.add_theme_color_override("font_color", BlockverseTheme.TEXT_MUTED)
 		caption.add_theme_font_size_override("font_size", 11)
 		box.add_child(caption)
-	var balance := get_node_or_null("CoinBalance") as Label
-	if balance:
-		balance.text = "🪙 %d" % int(SaveData.get_value("coins", 0))
+	if is_instance_valid(coin_label):
+		coin_label.text = "🪙 %d" % int(SaveData.get_value("coins", 0))
 
 func _on_skin_action(skin_id: String) -> void:
 	if SaveData.owns_skin(skin_id):
