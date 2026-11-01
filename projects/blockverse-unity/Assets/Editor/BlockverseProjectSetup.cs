@@ -42,6 +42,9 @@ public static class BlockverseProjectSetup
         so.ApplyModifiedPropertiesWithoutUndo();
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/Game.unity");
+        EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene("Assets/Scenes/Game.unity", true) };
+        PlayerSettings.applicationIdentifier = "com.dev.blockverse";
+        PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
         AssetDatabase.SaveAssets();
         Debug.Log("BLOCKVERSE starter scene created at Assets/Scenes/Game.unity.");
     }
