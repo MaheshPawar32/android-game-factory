@@ -351,8 +351,13 @@ func _try_place_selected(origin: Vector2i) -> void:
 	var shape: Array[Vector2i] = selected.cells
 	if not board.can_place(shape, origin):
 		_set_status("That placement doesn't fit. Try another position.")
+		Feedback.play("error")
+		Feedback.vibrate(18)
 		return
 	var result: Dictionary = board.place(shape, origin, int(selected.color_id))
+	board_view.animate_placement(result.placed)
+	Feedback.play("place")
+	Feedback.vibrate(22)
 	score += ScoringRules.placement_points(shape.size())
 	pieces[selected_piece] = {}
 	selected_piece = -1
@@ -365,6 +370,8 @@ func _try_place_selected(origin: Vector2i) -> void:
 		board_view.flash_special_cells(special_result.cells, effect_color)
 		if int(special_result.coins) > 0:
 			SaveData.add_coins(int(special_result.coins))
+			Feedback.play("reward")
+			Feedback.vibrate(55)
 			_show_reward_popup(int(special_result.coins))
 		_set_status(str(special_result.message))
 		if special_type == "bomb" or special_type == "rainbow" or special_type == "lightning":
@@ -378,6 +385,8 @@ func _try_place_selected(origin: Vector2i) -> void:
 		combo += 1
 		score += ScoringRules.line_points(cleared, combo)
 		board_view.flash_lines(result.cleared_rows, result.cleared_columns)
+		Feedback.play("combo" if combo > 1 else "clear")
+		Feedback.vibrate(45)
 		_set_status("LINE CLEAR! %d lines  •  COMBO x%d" % [cleared, combo])
 	elif special_type == "normal":
 		combo = 0
@@ -462,6 +471,8 @@ func _show_reward_popup(coins: int) -> void:
 
 func _show_victory_screen() -> void:
 	paused = true
+	Feedback.play("reward")
+	Feedback.vibrate(100)
 	var current := int(SaveData.get_value("current_level", 1))
 	SaveData.set_value("unlocked_level", maxi(int(SaveData.get_value("unlocked_level", 1)), current + 1))
 	var reward := 50 + current * 5
