@@ -17,6 +17,8 @@ var best_score := 0
 var board_size_button: Button
 var game_over := false
 var paused := false
+var level_lines := 0
+var level_objective := 3
 
 var board_view: Control
 var tray: HBoxContainer
@@ -34,6 +36,8 @@ func _ready() -> void:
 	best_score = int(SaveData.get_value("best_score", 0))
 	_build_ui()
 	_new_game()
+	if not bool(SaveData.get_value("tutorial_seen", false)):
+		_show_tutorial()
 
 func _build_ui() -> void:
 	var background := ColorRect.new()
@@ -193,6 +197,8 @@ func _new_game() -> void:
 	drag_active = false
 	game_over = false
 	paused = false
+	level_lines = 0
+	level_objective = 3 + int(SaveData.get_value("current_level", 1)) / 4
 	pieces = generator.next_tray(3)
 	_refresh_all()
 	_set_status("Drag a shape onto the board.")
@@ -356,6 +362,7 @@ func _try_place_selected(origin: Vector2i) -> void:
 		board_view.flash_special_cells(special_result.cells, effect_color)
 		if int(special_result.coins) > 0:
 			SaveData.add_coins(int(special_result.coins))
+			_show_reward_popup(int(special_result.coins))
 		_set_status(str(special_result.message))
 		if special_type == "bomb" or special_type == "rainbow" or special_type == "lightning":
 			score += int(special_result.cells.size()) * 5
@@ -363,6 +370,7 @@ func _try_place_selected(origin: Vector2i) -> void:
 		_set_status("Nice placement. Build your next clear.")
 
 	var cleared: int = int(result.lines_cleared)
+	level_lines += cleared
 	if cleared > 0:
 		combo += 1
 		score += ScoringRules.line_points(cleared, combo)
@@ -371,6 +379,9 @@ func _try_place_selected(origin: Vector2i) -> void:
 	elif special_type == "normal":
 		combo = 0
 
+	if bool(SaveData.get_value("adventure_active", false)) and level_lines >= level_objective:
+		_show_victory_screen()
+		return
 	if score > best_score:
 		best_score = score
 		SaveData.set_value("best_score", best_score)
@@ -426,6 +437,37 @@ func _show_game_over() -> void:
 	dialog.dialog_text = "FINAL SCORE  %s\nBEST SCORE  %s\n\nNo moves left. Try another round!" % [score, best_score]
 	dialog.confirmed.connect(func(): paused = false; _new_game())
 	dialog.ok_button_text = "PLAY AGAIN"
+	add_child(dialog)
+	dialog.popup_centered()
+
+func _show_tutorial() -> void:
+	var dialog := AcceptDialog.new()
+	dialog.title = "WELCOME TO BLOCKVERSE"
+	dialog.dialog_text = "1. Choose a shape from the tray.\n2. Drag it onto an empty part of the board.\n3. Complete a full row or column to clear it.\n4. Chain clears for combo bonuses.\n5. Special blocks have powerful effects."
+	dialog.ok_button_text = "LET'S PLAY"
+	dialog.confirmed.connect(func(): SaveData.set_value("tutorial_seen", true))
+	add_child(dialog)
+	dialog.popup_centered(Vector2i(420, 300))
+
+func _show_reward_popup(coins: int) -> void:
+	var dialog := AcceptDialog.new()
+	dialog.title = "TREASURE FOUND!"
+	dialog.dialog_text = "+%d coins added to your wallet." % coins
+	dialog.ok_button_text = "AWESOME"
+	add_child(dialog)
+	dialog.popup_centered()
+
+func _show_victory_screen() -> void:
+	paused = true
+	var current := int(SaveData.get_value("current_level", 1))
+	SaveData.set_value("unlocked_level", maxi(int(SaveData.get_value("unlocked_level", 1)), current + 1))
+	var reward := 50 + current * 5
+	SaveData.add_coins(reward)
+	var dialog := AcceptDialog.new()
+	dialog.title = "LEVEL COMPLETE!"
+	dialog.dialog_text = "Objective completed!\nLines cleared: %d / %d\n\nReward: %d coins" % [level_lines, level_objective, reward]
+	dialog.ok_button_text = "CONTINUE"
+	dialog.confirmed.connect(func(): AppRouter.open_level_select())
 	add_child(dialog)
 	dialog.popup_centered()
 
