@@ -58,7 +58,7 @@ func _test_overlap_rejected() -> void:
 	_check(not board.can_place(shape, Vector2i(1, 2)), "overlapping placement rejected")
 
 func _test_row_clear() -> void:
-	var board = Board.new()
+	var board = Board.new(10)
 	for x in range(board.size):
 		board.cells[4][x] = 0
 	var result: Dictionary = board.clear_completed_lines()
@@ -66,7 +66,7 @@ func _test_row_clear() -> void:
 	_check(board.get_cell(0, 4) == Board.EMPTY and board.get_cell(9, 4) == Board.EMPTY, "full row cleared")
 
 func _test_column_clear() -> void:
-	var board = Board.new()
+	var board = Board.new(10)
 	for y in range(board.size):
 		board.cells[y][6] = 0
 	var result: Dictionary = board.clear_completed_lines()
@@ -75,9 +75,9 @@ func _test_column_clear() -> void:
 
 func _test_simultaneous_lines() -> void:
 	var board = Board.new()
-	for x in range(Board.SIZE):
+	for x in range(board.size):
 		board.cells[3][x] = 0
-	for y in range(Board.SIZE):
+	for y in range(board.size):
 		board.cells[y][7] = 1
 	var result: Dictionary = board.clear_completed_lines()
 	_check(result.rows.size() == 1 and result.columns.size() == 1, "row and column detected in same clear")
@@ -100,6 +100,7 @@ func _test_scoring() -> void:
 	_check(Scoring.line_points(0, 1) == 0, "no line clear awards no line bonus")
 
 func _test_special_effect_bounds() -> void:
+	var board = Board.new(10)
 	var cells: Array[Vector2i] = Specials.bomb_cells(board, Vector2i.ZERO)
 	_check(cells.size() == 4, "corner bomb clips its 3x3 area to board bounds")
 	var center_cells: Array[Vector2i] = Specials.bomb_cells(board, Vector2i(5, 5))
@@ -123,20 +124,20 @@ func _test_lightning_connectivity() -> void:
 	_check(cells.size() == 3, "lightning finds connected orthogonal cluster only")
 
 func _test_special_resolution() -> void:
-	var bomb_board = Board.new()
+	var bomb_board = Board.new(10)
 	for y in range(3, 8):
 		for x in range(3, 8):
 			bomb_board.cells[y][x] = 1
 	var bomb: Dictionary = Specials.resolve(bomb_board, "bomb", Vector2i(5, 5))
 	_check(bomb.cells.size() == 9 and bomb_board.get_cell(5, 5) == Board.EMPTY, "bomb clears bounded 3x3 board area")
 
-	var rainbow_board = Board.new()
-	for x in range(Board.SIZE):
+	var rainbow_board = Board.new(10)
+	for x in range(rainbow_board.size):
 		rainbow_board.cells[4][x] = 2
 	var rainbow: Dictionary = Specials.resolve(rainbow_board, "rainbow", Vector2i(2, 4))
-	_check(rainbow.cells.size() == Board.SIZE and rainbow_board.get_cell(0, 4) == Board.EMPTY, "rainbow clears its selected row")
+	_check(rainbow.cells.size() == rainbow_board.size and rainbow_board.get_cell(0, 4) == Board.EMPTY, "rainbow clears its selected row")
 
-	var lightning_board = Board.new()
+	var lightning_board = Board.new(10)
 	lightning_board.cells[1][1] = 1
 	lightning_board.cells[1][2] = 1
 	lightning_board.cells[2][2] = 1
