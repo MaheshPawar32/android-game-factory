@@ -1,0 +1,120 @@
+extends SceneTree
+## Dependency-free headless test runner.
+## Run: godot --headless --path projects/block-puzzle --script res://tests/run_engine_tests.gd
+
+const Board = preload("res://scripts/engine/board_model.gd")
+const Pieces = preload("res://scripts/engine/piece_definitions.gd")
+const Generator = preload("res://scripts/engine/piece_generator.gd")
+const Scoring = preload("res://scripts/engine/scoring_rules.gd")
+const Specials = preload("res://scripts/engine/special_block_resolver.gd")
+
+var passed := 0
+var failed := 0
+
+func _initialize() -> void:
+	_test_empty_board()
+	_test_placement_and_bounds()
+	_test_overlap_rejected()
+	_test_row_clear()
+	_test_column_clear()
+	_test_simultaneous_lines()
+	_test_seeded_generator()
+	_test_scoring()
+	_test_special_effect_bounds()
+	_test_rainbow_line()
+	_test_lightning_connectivity()
+	print("\nBLOCKVERSE ENGINE TESTS: %d passed, %d failed" % [passed, failed])
+	quit(1 if failed > 0 else 0)
+
+func _check(condition: bool, label: String) -> void:
+	if condition:
+		passed += 1
+		print("PASS: " + label)
+	else:
+		failed += 1
+		push_error("FAIL: " + label)
+
+func _test_empty_board() -> void:
+	var board = Board.new()
+	_check(board.get_cell(0, 0) == Board.EMPTY and board.get_cell(9, 9) == Board.EMPTY, "new board starts empty")
+	_check(not board.is_full(), "empty board is not full")
+
+func _test_placement_and_bounds() -> void:
+	var board = Board.new()
+	var shape: Array[Vector2i] = [Vector2i.ZERO, Vector2i.RIGHT]
+	_check(board.can_place(shape, Vector2i(0, 0)), "valid placement accepted")
+	_check(not board.can_place(shape, Vector2i(9, 0)), "right boundary rejects out-of-range shape")
+	_check(not board.can_place(shape, Vector2i(-1, 0)), "negative coordinate rejected")
+	var result: Dictionary = board.place(shape, Vector2i(2, 3), 2)
+	_check(result.success and board.get_cell(2, 3) == 2 and board.get_cell(3, 3) == 2, "placement writes both cells")
+
+func _test_overlap_rejected() -> void:
+	var board = Board.new()
+	board.cells[2][2] = 1
+	var shape: Array[Vector2i] = [Vector2i.ZERO, Vector2i.RIGHT]
+	_check(not board.can_place(shape, Vector2i(1, 2)), "overlapping placement rejected")
+
+func _test_row_clear() -> void:
+	var board = Board.new()
+	for x in range(Board.SIZE):
+		board.cells[4][x] = 0
+	var result: Dictionary = board.clear_completed_lines()
+	_check(result.rows == [4], "full row detected")
+	_check(board.get_cell(0, 4) == Board.EMPTY and board.get_cell(9, 4) == Board.EMPTY, "full row cleared")
+
+func _test_column_clear() -> void:
+	var board = Board.new()
+	for y in range(Board.SIZE):
+		board.cells[y][6] = 0
+	var result: Dictionary = board.clear_completed_lines()
+	_check(result.columns == [6], "full column detected")
+	_check(board.get_cell(6, 0) == Board.EMPTY and board.get_cell(6, 9) == Board.EMPTY, "full column cleared")
+
+func _test_simultaneous_lines() -> void:
+	var board = Board.new()
+	for x in range(Board.SIZE):
+		board.cells[3][x] = 0
+	for y in range(Board.SIZE):
+		board.cells[y][7] = 1
+	var result: Dictionary = board.clear_completed_lines()
+	_check(result.rows.size() == 1 and result.columns.size() == 1, "row and column detected in same clear")
+	_check(board.get_cell(7, 3) == Board.EMPTY, "intersection cleared once without error")
+
+func _test_seeded_generator() -> void:
+	var a = Generator.new()
+	var b = Generator.new()
+	a.set_seed(12345)
+	b.set_seed(12345)
+	var first_a: Dictionary = a.next_piece()
+	var first_b: Dictionary = b.next_piece()
+	_check(first_a.shape_id == first_b.shape_id and first_a.color_id == first_b.color_id, "seeded piece generation is reproducible")
+	_check(a.next_tray(3).size() == 3, "piece tray returns requested count")
+
+func _test_scoring() -> void:
+	_check(Scoring.placement_points(4) == 40, "placement score is 10 per block")
+	_check(Scoring.line_points(2, 3) == 600, "two lines at combo three score 600")
+	_check(Scoring.line_points(2, 99) == 1000, "combo multiplier is capped")
+	_check(Scoring.line_points(0, 1) == 0, "no line clear awards no line bonus")
+
+func _test_special_effect_bounds() -> void:
+	var cells: Array[Vector2i] = Specials.bomb_cells(Vector2i.ZERO)
+	_check(cells.size() == 4, "corner bomb clips its 3x3 area to board bounds")
+	var center_cells: Array[Vector2i] = Specials.bomb_cells(Vector2i(5, 5))
+	_check(center_cells.size() == 9, "center bomb returns a 3x3 area")
+
+func _test_rainbow_line() -> void:
+	var board = Board.new()
+	board.cells[2][0] = 1
+	board.cells[2][4] = 2
+	var cells: Array[Vector2i] = Specials.rainbow_line_cells(board, true, 2)
+	_check(cells.size() == 2, "rainbow returns occupied cells in chosen row")
+	_check(Specials.rainbow_line_cells(board, false, 12).is_empty(), "rainbow rejects invalid line index")
+
+func _test_lightning_connectivity() -> void:
+	var board = Board.new()
+	board.cells[1][1] = 1
+	board.cells[1][2] = 1
+	board.cells[2][2] = 1
+	board.cells[8][8] = 1
+	var cells: Array[Vector2i] = Specials.lightning_connected_cells(board, Vector2i(1, 1))
+	_check(cells.size() == 3, "lightning finds connected orthogonal cluster only")
