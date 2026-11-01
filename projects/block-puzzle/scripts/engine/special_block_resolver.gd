@@ -1,22 +1,21 @@
 extends RefCounted
 class_name BlockverseSpecialResolver
-## Pure deterministic special-block resolution. UI owns all visual/audio effects.
 
 enum Type { NORMAL, BOMB, RAINBOW, LIGHTNING, TREASURE }
 
-static func bomb_cells(center: Vector2i, radius: int = 1) -> Array[Vector2i]:
+static func bomb_cells(board: BlockverseBoard, center: Vector2i, radius: int = 1) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
 	for y in range(center.y - radius, center.y + radius + 1):
 		for x in range(center.x - radius, center.x + radius + 1):
-			if x >= 0 and x < BlockverseBoard.SIZE and y >= 0 and y < BlockverseBoard.SIZE:
+			if board.is_inside(x, y):
 				result.append(Vector2i(x, y))
 	return result
 
 static func rainbow_line_cells(board: BlockverseBoard, is_row: bool, line_index: int) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
-	if line_index < 0 or line_index >= BlockverseBoard.SIZE:
+	if line_index < 0 or line_index >= board.size:
 		return result
-	for i in range(BlockverseBoard.SIZE):
+	for i in range(board.size):
 		var point := Vector2i(i, line_index) if is_row else Vector2i(line_index, i)
 		if board.get_cell(point.x, point.y) != BlockverseBoard.EMPTY:
 			result.append(point)
@@ -44,7 +43,7 @@ static func resolve(board: BlockverseBoard, special_type: String, origin: Vector
 	var message := ""
 	match special_type:
 		"bomb":
-			targets = bomb_cells(origin, 1)
+			targets = bomb_cells(board, origin, 1)
 			message = "BOOM! 3 × 3 BLAST"
 		"rainbow":
 			var row_cells := rainbow_line_cells(board, true, origin.y)
@@ -61,14 +60,8 @@ static func resolve(board: BlockverseBoard, special_type: String, origin: Vector
 		_:
 			return {"type": "normal", "cells": [], "coins": 0, "message": ""}
 	for point in targets:
-		if board.is_inside(point.x, point.y):
-			board.cells[point.y][point.x] = BlockverseBoard.EMPTY
-	return {
-		"type": special_type,
-		"cells": targets,
-		"coins": reward,
-		"message": message
-	}
+		board.cells[point.y][point.x] = BlockverseBoard.EMPTY
+	return {"type": special_type, "cells": targets, "coins": reward, "message": message}
 
 static func treasure_reward(base_coins: int = 25) -> int:
 	return maxi(0, base_coins)
