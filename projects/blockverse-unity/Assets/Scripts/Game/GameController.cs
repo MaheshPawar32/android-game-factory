@@ -404,9 +404,11 @@ namespace Blockverse
             int comboBonus = cleared > 0 ? (comboStreak - 1) * 50 : 0;
             score += CountCells(piece.Shape) * 10 + cleared * config.BoardSize * 10 + affected * 5 + comboBonus;
             if (score > bestScore) { bestScore = score; PlayerPrefs.SetInt("blockverse_best_score", bestScore); }
-            if (cleared > 0) coins += cleared * 2 + Mathf.Max(0, comboStreak - 1);
+            int earnedCoins = cleared > 0 ? cleared * 2 + Mathf.Max(0, comboStreak - 1) : 0;
+            coins += earnedCoins;
             PlayerPrefs.SetInt("blockverse_coins", coins);
             PlayerPrefs.Save();
+            TrackMissionProgress(CountCells(piece.Shape), cleared, earnedCoins);
             RefreshBoardVisuals();
             AnimateBoard();
             gameAudio.PlayPlace();
@@ -520,7 +522,9 @@ namespace Blockverse
             PlayerPrefs.SetInt("blockverse_level", unlocked);
             PlayerPrefs.SetInt("blockverse_coins", coins);
             PlayerPrefs.SetInt($"blockverse_level_{level}_stars", 3);
+            PlayerPrefs.SetInt("blockverse_levels_won", PlayerPrefs.GetInt("blockverse_levels_won", 0) + 1);
             PlayerPrefs.Save();
+            CheckAchievements();
             ShowResult(true, "LEVEL COMPLETE!", $"You cleared level {level}.\n+{reward} BONUS COINS\nScore: {score:N0}");
         }
 
