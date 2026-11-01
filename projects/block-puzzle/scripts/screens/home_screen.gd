@@ -63,7 +63,7 @@ func _build_screen() -> void:
 	var adventure := _button("🗺  ADVENTURE\nWorld 1", BlockverseTheme.SURFACE_RAISED, BlockverseTheme.PRIMARY)
 	adventure.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	adventure.custom_minimum_size.y = 82
-	adventure.pressed.connect(func(): AppRouter.open_mode_select())
+	adventure.pressed.connect(func(): AppRouter.open_adventure_map())
 	cards.add_child(adventure)
 	var daily := _button("📅  DAILY\nCHALLENGE", BlockverseTheme.SURFACE_RAISED, BlockverseTheme.PRIMARY)
 	daily.size_flags_horizontal = Control.SIZE_EXPAND_FILL
