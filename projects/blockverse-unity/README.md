@@ -18,6 +18,7 @@
 - Failure overlay appears when the move limit is reached or no remaining piece can be placed.
 - Gameplay pause menu with Resume, Restart Level and Main Menu actions; pausing also freezes game-time animations safely.
 - One-time per-level revive offer on failure for 50 coins; clears up to five occupied cells and adds three moves when a move-limit failure triggered it.
+- One undo per level: restores the previous board, score, combo, move count, coin balance, daily mission counters and tray pieces; also available directly from a failure screen when the last move caused the failure.
 - Runtime win/fail overlay provides Next Level or Retry actions.
 - Animated board pulse and special-block burst particles.
 - Procedurally generated placement, clear, bomb, win, and fail sound effects (no external audio assets required).
