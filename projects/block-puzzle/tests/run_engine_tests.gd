@@ -7,6 +7,7 @@ const Pieces = preload("res://scripts/engine/piece_definitions.gd")
 const Generator = preload("res://scripts/engine/piece_generator.gd")
 const Scoring = preload("res://scripts/engine/scoring_rules.gd")
 const SpecialResolverScript = preload("res://scripts/engine/special_block_resolver.gd")
+const LevelData = preload("res://scripts/engine/level_generator.gd")
 
 var passed := 0
 var failed := 0
@@ -26,6 +27,7 @@ func _initialize() -> void:
 	_test_lightning_connectivity()
 	_test_special_resolution()
 	_test_special_generator_distribution()
+	_test_procedural_levels()
 	print("\nBLOCKVERSE ENGINE TESTS: %d passed, %d failed" % [passed, failed])
 	quit(1 if failed > 0 else 0)
 
@@ -103,7 +105,7 @@ func _test_special_effect_bounds() -> void:
 	var board = Board.new(10)
 	var cells: Array[Vector2i] = SpecialResolverScript.bomb_cells(board, Vector2i.ZERO)
 	_check(cells.size() == 4, "corner bomb clips its 3x3 area to board bounds")
-	var center_cells: Array[Vector2i] = Specials.bomb_cells(board, Vector2i(5, 5))
+	var center_cells: Array[Vector2i] = SpecialResolverScript.bomb_cells(board, Vector2i(5, 5))
 	_check(center_cells.size() == 9, "center bomb returns a 3x3 area")
 
 func _test_rainbow_line() -> void:
@@ -175,3 +177,12 @@ func _test_custom_board_sizes() -> void:
 	var snapshot: Dictionary = ten_board.to_dictionary()
 	var restored = Board.new()
 	_check(restored.load_dictionary(snapshot) and restored.size == 7, "board snapshot restores custom size")
+
+func _test_procedural_levels() -> void:
+	var first: Dictionary = LevelData.configuration(1)
+	var fifth_thousand: Dictionary = LevelData.configuration(5000)
+	var beyond: Dictionary = LevelData.configuration(5001)
+	_check(LevelData.is_supported(5000) and LevelData.is_supported(5001), "procedural campaign supports 5,000+ levels")
+	_check(first.seed != fifth_thousand.seed and fifth_thousand.seed == LevelData.configuration(5000).seed, "each level has a stable unique repeatable seed")
+	_check(int(fifth_thousand.objective_lines) >= int(first.objective_lines), "level objectives scale with campaign progress")
+	_check(int(beyond.world) > int(fifth_thousand.world), "world numbering continues beyond the first 5,000 levels")
