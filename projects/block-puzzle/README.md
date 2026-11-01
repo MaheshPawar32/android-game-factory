@@ -89,3 +89,18 @@ Source files were committed and retrieved from GitHub after commit. A Godot exec
 - More polished piece preview positioning and animated placement.
 - Line-clear particle effects and score popups.
 - Persist and restore full in-progress board sessions.
+
+## Batch 4 — Special blocks and effects
+
+Implemented in the classic gameplay path:
+- Weighted special-piece generation: 4% bomb, 4% rainbow, 4% lightning, 5% treasure; remaining rolls are normal pieces.
+- Bomb clears the bounded 3×3 area around its placement origin.
+- Rainbow clears the more occupied of the placement row or column (row wins ties), making its targeting deterministic without a modal interruption.
+- Lightning clears the four-directionally connected occupied cluster from its placement origin.
+- Treasure grants 25 local coins through the save manager without clearing board cells.
+- Special pieces have distinct tray labels/colors and board target-flash feedback.
+- Global touch/mouse drag tracking handles release outside the source tray control.
+
+### Validation status
+
+Special resolution and generation tests were added to the headless test runner. Source commits were retrieved from GitHub. The Godot runtime test workflow has not yet been observed completing, so runtime test status remains **NOT VERIFIED**. Effects are lightweight draw flashes rather than particle-based explosion/chain animations; those are visual polish work for a later batch.
