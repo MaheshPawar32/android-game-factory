@@ -21,6 +21,8 @@ var _clear_flash := 0.0
 var _special_flash_cells: Array[Vector2i] = []
 var _special_flash_color := Color.WHITE
 var _special_flash := 0.0
+var _place_flash_cells: Array[Vector2i] = []
+var _place_flash := 0.0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -83,6 +85,17 @@ func flash_special_cells(points: Array, color: Color) -> void:
 	tween.tween_callback(queue_redraw)
 	queue_redraw()
 
+func animate_placement(points: Array) -> void:
+	_place_flash_cells.clear()
+	for point in points:
+		if point is Vector2i:
+			_place_flash_cells.append(point)
+	_place_flash = 1.0
+	var tween := create_tween()
+	tween.tween_property(self, "_place_flash", 0.0, 0.18)
+	tween.tween_callback(queue_redraw)
+	queue_redraw()
+
 func _draw() -> void:
 	if board_model == null:
 		return
@@ -100,6 +113,8 @@ func _draw() -> void:
 				fill = fill.lerp(Color.WHITE, _clear_flash * 0.75)
 			if _special_flash > 0.0 and Vector2i(x, y) in _special_flash_cells:
 				fill = fill.lerp(_special_flash_color, _special_flash * 0.82)
+			if _place_flash > 0.0 and Vector2i(x, y) in _place_flash_cells:
+				fill = fill.lerp(Color.WHITE, _place_flash * 0.48)
 			draw_rect(rect, fill, true)
 			draw_rect(rect, fill.lightened(0.16) if value != -1 else Color("#33415F"), false, 1.2)
 	if not preview_shape.is_empty() and preview_origin.x >= 0:
