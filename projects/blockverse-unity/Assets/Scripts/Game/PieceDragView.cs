@@ -1,85 +1,11 @@
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
-namespace Blockverse
-{
-    public sealed class PieceDragView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
-    {
-        public bool[,] Shape { get; private set; }
-
-        private GameController controller;
-        private RectTransform trayParent;
-        private Transform originalParent;
-        private Vector2 originalPosition;
-        private Canvas canvas;
-        private CanvasGroup canvasGroup;
-
-        public void Initialize(GameController owner, bool[,] shape, RectTransform tray)
-        {
-            controller = owner;
-            Shape = shape;
-            trayParent = tray;
-            canvas = GetComponentInParent<Canvas>();
-            canvasGroup = gameObject.AddComponent<CanvasGroup>();
-            var hitArea = GetComponent<Image>();
-            if (hitArea == null) hitArea = gameObject.AddComponent<Image>();
-            hitArea.color = new Color(1f, 1f, 1f, 0.01f);
-            hitArea.raycastTarget = true;
-            BuildVisual();
-        }
-
-        private void BuildVisual()
-        {
-            int rows = Shape.GetLength(0);
-            int columns = Shape.GetLength(1);
-            var rect = (RectTransform)transform;
-            rect.sizeDelta = new Vector2(150, 130);
-            float size = Mathf.Min(30f, 88f / Mathf.Max(rows, columns));
-            float width = columns * size + (columns - 1) * 4f;
-            float height = rows * size + (rows - 1) * 4f;
-
-            for (int y = 0; y < rows; y++)
-            for (int x = 0; x < columns; x++)
-            {
-                if (!Shape[y, x]) continue;
-                var cell = new GameObject("PieceCell", typeof(RectTransform), typeof(Image));
-                cell.transform.SetParent(transform, false);
-                var cellRect = cell.GetComponent<RectTransform>();
-                cellRect.sizeDelta = new Vector2(size, size);
-                cellRect.anchoredPosition = new Vector2(-width / 2f + size / 2f + x * (size + 4f),
-                    height / 2f - size / 2f - y * (size + 4f));
-                var image = cell.GetComponent<Image>();
-                image.color = new Color(0.28f, 0.68f, 1f);
-                image.raycastTarget = false;
-            }
-        }
-
-        public void OnBeginDrag(PointerEventData eventData)
-        {
-            if (!enabled || canvas == null) return;
-            originalParent = transform.parent;
-            originalPosition = ((RectTransform)transform).anchoredPosition;
-            transform.SetParent(canvas.transform, true);
-            canvasGroup.blocksRaycasts = false;
-            canvasGroup.alpha = 0.88f;
-            transform.position = eventData.position;
-        }
-
-        public void OnDrag(PointerEventData eventData)
-        {
-            if (enabled) transform.position = eventData.position;
-        }
-
-        public void OnEndDrag(PointerEventData eventData)
-        {
-            if (originalParent == null) return;
-            bool placed = controller.TryDrop(Shape, eventData.position, eventData.pressEventCamera);
-            transform.SetParent(originalParent, false);
-            ((RectTransform)transform).anchoredPosition = originalPosition;
-            canvasGroup.blocksRaycasts = true;
-            canvasGroup.alpha = 1f;
-            if (placed) controller.ConsumePiece(this);
-        }
-    }
+using UnityEngine; using UnityEngine.UI; using UnityEngine.EventSystems;
+namespace Blockverse {
+ public sealed class PieceDragView:MonoBehaviour,IBeginDragHandler,IDragHandler,IEndDragHandler {
+  public PieceDefinition Definition{get;private set;} private GameController controller;private Canvas canvas;private CanvasGroup group;private Transform originalParent;private Vector2 originalPosition;
+  public void Initialize(GameController owner,PieceDefinition definition,RectTransform tray){controller=owner;Definition=definition;canvas=GetComponentInParent<Canvas>();group=gameObject.AddComponent<CanvasGroup>();var hit=GetComponent<Image>();if(hit==null)hit=gameObject.AddComponent<Image>();hit.color=new Color(1,1,1,.01f);hit.raycastTarget=true;BuildVisual();}
+  private void BuildVisual(){bool[,] s=Definition.Shape;int rows=s.GetLength(0),cols=s.GetLength(1);var rect=(RectTransform)transform;rect.sizeDelta=new Vector2(150,130);float size=Mathf.Min(30,88f/Mathf.Max(rows,cols)),w=cols*size+(cols-1)*4,h=rows*size+(rows-1)*4;Color tint=Definition.Special==SpecialPieceType.Bomb?new Color(1,.38f,.28f):Definition.Special==SpecialPieceType.Rainbow?new Color(.75f,.42f,1):Definition.Special==SpecialPieceType.Lightning?new Color(1,.82f,.25f):new Color(.28f,.68f,1);for(int y=0;y<rows;y++)for(int x=0;x<cols;x++){if(!s[y,x])continue;var cell=new GameObject("PieceCell",typeof(RectTransform),typeof(Image));cell.transform.SetParent(transform,false);var r=cell.GetComponent<RectTransform>();r.sizeDelta=new Vector2(size,size);r.anchoredPosition=new Vector2(-w/2+size/2+x*(size+4),h/2-size/2-y*(size+4));var img=cell.GetComponent<Image>();img.color=tint;img.raycastTarget=false;}}
+  public void OnBeginDrag(PointerEventData e){if(!enabled||canvas==null)return;originalParent=transform.parent;originalPosition=((RectTransform)transform).anchoredPosition;transform.SetParent(canvas.transform,true);group.blocksRaycasts=false;group.alpha=.88f;transform.position=e.position;}
+  public void OnDrag(PointerEventData e){if(enabled)transform.position=e.position;}
+  public void OnEndDrag(PointerEventData e){if(originalParent==null)return;bool placed=controller.TryDrop(Definition,e.position,e.pressEventCamera);transform.SetParent(originalParent,false);((RectTransform)transform).anchoredPosition=originalPosition;group.blocksRaycasts=true;group.alpha=1;if(placed)controller.ConsumePiece(this);}
+ }
 }
