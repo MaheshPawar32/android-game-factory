@@ -552,7 +552,7 @@ func _show_victory_screen() -> void:
 	SaveData.add_coins(reward, "Adventure level %d" % current)
 	var dialog := AcceptDialog.new()
 	dialog.title = "LEVEL COMPLETE!"
-	dialog.dialog_text = "Objective completed!\nLines cleared: %d / %d\n\nReward: %d coins" % [level_lines, level_objective, reward]
+	dialog.dialog_text = "Objective completed!\nLines cleared: %d / %d\nLevel %d unlocked next.\n\nReward: %d coins" % [level_lines, level_objective, next_level, reward]
 	dialog.ok_button_text = "CONTINUE"
 	dialog.confirmed.connect(func(): AppRouter.open_level_select())
 	add_child(dialog)
