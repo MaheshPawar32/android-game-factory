@@ -3,7 +3,6 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 using Blockverse;
 
 public static class BlockverseProjectSetup
@@ -11,8 +10,10 @@ public static class BlockverseProjectSetup
     [MenuItem("BLOCKVERSE/Setup Starter Scene")]
     public static void CreateStarterScene()
     {
+        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var root = new GameObject("BLOCKVERSE");
         var canvasObject = new GameObject("Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        canvasObject.transform.SetParent(root.transform, false);
         var canvas = canvasObject.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = canvasObject.GetComponent<CanvasScaler>();
@@ -20,7 +21,7 @@ public static class BlockverseProjectSetup
         scaler.referenceResolution = new Vector2(1080, 1920);
 
         var title = CreateText(canvasObject.transform, "BLOCKVERSE", 64, new Vector2(0, 820), new Vector2(900, 120));
-        title.alignment = TextAlignmentOptions.Center;
+        title.alignment = TextAnchor.MiddleCenter;
         var score = CreateText(canvasObject.transform, "SCORE  0", 42, new Vector2(0, 690), new Vector2(900, 80));
         var goal = CreateText(canvasObject.transform, "LEVEL 1", 30, new Vector2(0, 610), new Vector2(900, 70));
 
@@ -35,29 +36,29 @@ public static class BlockverseProjectSetup
         so.FindProperty("boardRoot").objectReferenceValue = rect;
         so.FindProperty("scoreLabel").objectReferenceValue = score;
         so.FindProperty("goalLabel").objectReferenceValue = goal;
-        so.ApplyModifiedPropertiesWithoutUndo();
 
         var restart = CreateButton(canvasObject.transform, "RESTART", new Vector2(0, -650));
         so.FindProperty("restartButton").objectReferenceValue = restart;
         so.ApplyModifiedPropertiesWithoutUndo();
 
-        EditorSceneManager.SaveScene(EditorSceneManager.NewScene(NewSceneSetup.EmptyScene), "Assets/Scenes/Game.unity");
-        Object.DestroyImmediate(root);
+        EditorSceneManager.SaveScene(scene, "Assets/Scenes/Game.unity");
         AssetDatabase.SaveAssets();
-        Debug.Log("BLOCKVERSE starter scene generated. Run BLOCKVERSE > Setup Starter Scene once more to create the scene hierarchy, then save.");
+        Debug.Log("BLOCKVERSE starter scene created at Assets/Scenes/Game.unity.");
     }
 
-    private static TMP_Text CreateText(Transform parent, string value, int size, Vector2 position, Vector2 dimensions)
+    private static Text CreateText(Transform parent, string value, int size, Vector2 position, Vector2 dimensions)
     {
-        var go = new GameObject(value, typeof(RectTransform), typeof(TextMeshProUGUI));
+        var go = new GameObject(value, typeof(RectTransform), typeof(Text));
         go.transform.SetParent(parent, false);
         var rect = go.GetComponent<RectTransform>();
         rect.sizeDelta = dimensions;
         rect.anchoredPosition = position;
-        var text = go.GetComponent<TMP_Text>();
+        var text = go.GetComponent<Text>();
         text.text = value;
+        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         text.fontSize = size;
         text.color = Color.white;
+        text.alignment = TextAnchor.MiddleCenter;
         return text;
     }
 
