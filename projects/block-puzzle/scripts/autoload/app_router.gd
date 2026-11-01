@@ -23,6 +23,25 @@ func open_level_select() -> void:
 	_change_scene(LEVEL_SELECT)
 
 func _change_scene(path: String) -> void:
-	var error := get_tree().change_scene_to_file(path)
-	if error != OK:
-		push_error("BLOCKVERSE: failed to open scene %s (error %s)." % [path, error])
+	var current := get_tree().current_scene
+	if current == null:
+		var immediate_error := get_tree().change_scene_to_file(path)
+		if immediate_error != OK:
+			push_error("BLOCKVERSE: failed to open scene %s (error %s)." % [path, immediate_error])
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 100
+	current.add_child(layer)
+	var fade := ColorRect.new()
+	fade.color = Color(0.02, 0.03, 0.08, 0.0)
+	fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fade.mouse_filter = Control.MOUSE_FILTER_STOP
+	layer.add_child(fade)
+	var tween := create_tween()
+	tween.tween_property(fade, "color:a", 1.0, 0.16)
+	tween.tween_callback(func():
+		var error := get_tree().change_scene_to_file(path)
+		if error != OK:
+			layer.queue_free()
+			push_error("BLOCKVERSE: failed to open scene %s (error %s)." % [path, error])
+	)
