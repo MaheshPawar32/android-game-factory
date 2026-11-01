@@ -14,6 +14,7 @@ var drag_active := false
 var score := 0
 var combo := 0
 var best_score := 0
+var board_size_button: Button
 var game_over := false
 
 var board_view: Control
@@ -25,7 +26,8 @@ var status_label: Label
 var tray_buttons: Array[Button] = []
 
 func _ready() -> void:
-	board = BoardModel.new()
+	var saved_size := clampi(int(SaveData.get_value("board_size", 5)), 5, 10)
+	board = BoardModel.new(saved_size)
 	generator = PieceGenerator.new()
 	generator.randomize_seed()
 	best_score = int(SaveData.get_value("best_score", 0))
@@ -61,6 +63,11 @@ func _build_ui() -> void:
 	back.custom_minimum_size = Vector2(54, 54)
 	back.pressed.connect(func(): AppRouter.go_home())
 	header.add_child(back)
+	var size_button := _button("%d×%d" % [board.size, board.size], Color("#293657"))
+	size_button.custom_minimum_size = Vector2(76, 54)
+	size_button.pressed.connect(_show_board_size_picker)
+	board_size_button = size_button
+	header.add_child(size_button)
 	var restart := _button("↻", Color("#293657"))
 	restart.custom_minimum_size = Vector2(54, 54)
 	restart.pressed.connect(_new_game)
@@ -154,6 +161,25 @@ func _stat_card(caption: String, value_label: Label) -> PanelContainer:
 	card.add_child(box)
 	return card
 
+func _show_board_size_picker() -> void:
+	var dialog := ConfirmationDialog.new()
+	dialog.title = "BOARD SIZE"
+	dialog.dialog_text = "Choose your grid size. Smaller boards are faster and more challenging."
+	var options := OptionButton.new()
+	for value in range(5, 11):
+		options.add_item("%d × %d" % [value, value], value)
+		if value == board.size:
+			options.select(value - 5)
+	dialog.add_child(options)
+	dialog.confirmed.connect(func():
+		var chosen := options.get_selected_id()
+		SaveData.set_value("board_size", chosen)
+		board.set_size(chosen)
+		_new_game()
+	)
+	add_child(dialog)
+	dialog.popup_centered(Vector2i(360, 180))
+
 func _new_game() -> void:
 	board.reset()
 	score = 0
@@ -167,6 +193,8 @@ func _new_game() -> void:
 
 func _refresh_all() -> void:
 	board_view.set_board(board)
+	if is_instance_valid(board_size_button):
+		board_size_button.text = "%d×%d" % [board.size, board.size]
 	_refresh_tray()
 	score_label.text = str(score)
 	best_label.text = str(best_score)
