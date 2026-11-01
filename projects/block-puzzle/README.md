@@ -208,3 +208,15 @@ Godot headless tests and Android APK export run automatically on pushes. The lat
 
 ### Validation
 Source committed and retrieved from GitHub. Godot runtime parsing, deterministic replay, timer behavior, and Android interaction remain unverified until the GitHub Actions runs complete and the project is exercised in Godot 4.4.
+
+
+## Batch 10 — Adventure expansion
+
+- Expanded Adventure into four named worlds: Crystal Grove, Ember Canyon, Frost Peaks, and Starlight Bay.
+- Added 48 global levels (12 per world) with world-aware locking, completed stars, current-level highlighting, and progress counts.
+- Completing a level unlocks the next global level and automatically opens the next world at levels 13, 25, and 37.
+- Level objectives scale from 3 cleared lines upward by one line every four levels; the selected world's level screen previews its starting objective.
+- Completion rewards scale with level number and the victory dialog names the next unlocked level.
+
+### Validation
+The Adventure scripts were retrieved from GitHub after the final commits for source inspection. Godot headless parsing, scene navigation, level unlock behavior, and Android layout still require a successful GitHub Actions run and device testing.
