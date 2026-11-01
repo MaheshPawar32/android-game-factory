@@ -287,7 +287,7 @@ func _release_drag_from_screen(screen_position: Vector2) -> void:
 	_finish_drag()
 
 func _on_piece_tap(index: int) -> void:
-	if game_over or pieces[index].is_empty():
+	if paused or game_over or pieces[index].is_empty():
 		return
 	selected_piece = index
 	_set_status("Piece selected. Drag it onto the board.")
@@ -295,7 +295,7 @@ func _on_piece_tap(index: int) -> void:
 		tray_buttons[i].modulate = Color("#B9D4FF") if i == index else Color.WHITE
 
 func _on_piece_gui_input(event: InputEvent, index: int) -> void:
-	if game_over or pieces[index].is_empty():
+	if paused or game_over or pieces[index].is_empty():
 		return
 	if event is InputEventScreenTouch and event.pressed:
 		_start_drag(index)
@@ -326,7 +326,7 @@ func _update_drag_from_screen(screen_position: Vector2) -> void:
 		board_view.clear_preview()
 
 func _on_board_pointer_moved(local_position: Vector2) -> void:
-	if not drag_active or selected_piece < 0:
+	if paused or game_over or not drag_active or selected_piece < 0:
 		return
 	if board_view.is_inside_board(local_position):
 		var cell: Vector2i = board_view.cell_from_position(local_position)
@@ -336,7 +336,7 @@ func _on_board_pointer_moved(local_position: Vector2) -> void:
 		board_view.clear_preview()
 
 func _on_board_pointer_released(local_position: Vector2) -> void:
-	if not drag_active or selected_piece < 0:
+	if paused or game_over or not drag_active or selected_piece < 0:
 		return
 	if board_view.is_inside_board(local_position):
 		var cell: Vector2i = board_view.cell_from_position(local_position)
