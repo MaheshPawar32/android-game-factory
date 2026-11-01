@@ -5,6 +5,8 @@ const PANEL := Color("#202943")
 const TEXT := Color("#F6F5FF")
 const MUTED := Color("#A7B0CC")
 const TEAL := Color("#25B8A8")
+const WORLD_NAMES := ["CRYSTAL GROVE", "EMBER CANYON", "FROST PEAKS", "STARLIGHT BAY"]
+const WORLD_DETAILS := ["Master the basics among glowing crystal gardens.", "Clear fiery lanes and build longer combos.", "Plan carefully across the icy challenge boards.", "Conquer the final cosmic puzzle trials."]
 
 func _ready() -> void:
 	_build()
@@ -47,7 +49,9 @@ func _build_world_map(root: VBoxContainer) -> void:
 	content.alignment = BoxContainer.ALIGNMENT_CENTER
 	content.add_theme_constant_override("separation", 18)
 	world.add_child(content)
-	var unlocked := int(SaveData.get_value("unlocked_world", 1))
+	var unlocked_level := int(SaveData.get_value("unlocked_level", 1))
+	var unlocked := clampi(int(ceil(float(unlocked_level) / 12.0)), 1, 4)
+	SaveData.set_value("unlocked_world", unlocked)
 	for i in range(1, 5):
 		var row := HBoxContainer.new()
 		content.add_child(row)
@@ -56,18 +60,24 @@ func _build_world_map(root: VBoxContainer) -> void:
 		var info := VBoxContainer.new()
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(info)
-		info.add_child(_label("WORLD %02d  •  %s" % [i, ["CRYSTAL GROVE", "EMBER CANYON", "FROST PEAKS", "STARLIGHT BAY"][i - 1]], 17, TEXT, true))
-		info.add_child(_label("12 levels • Unique objectives", 12, MUTED))
+		info.add_child(_label("WORLD %02d  •  %s" % [i, WORLD_NAMES[i - 1]], 17, TEXT, true))
+		info.add_child(_label(WORLD_DETAILS[i - 1], 12, MUTED))
+		var first_level := (i - 1) * 12 + 1
+		var completed := clampi(unlocked_level - first_level, 0, 12)
+		info.add_child(_label("%d / 12 levels complete" % completed, 11, Color("#FFD166")))
 		var open := _button("PLAY" if i <= unlocked else "LOCKED", TEAL if i <= unlocked else Color("#34405C"))
 		open.disabled = i > unlocked
-		open.pressed.connect(func(): AppRouter.open_level_select())
+		open.pressed.connect(func(): SaveData.set_value("selected_world", i); AppRouter.open_level_select())
 		row.add_child(open)
 	_add_bottom_button(root, "CONTINUE ADVENTURE", TEAL, func(): AppRouter.open_level_select())
 
 func _build_level_select(root: VBoxContainer) -> void:
-	var level := int(SaveData.get_value("unlocked_level", 1))
-	root.add_child(_label("CRYSTAL GROVE   /   WORLD 01", 13, MUTED))
-	var progress := _label("YOUR JOURNEY     %d / 12 LEVELS" % mini(level - 1, 12), 15, Color("#FFD166"), true)
+	var world := clampi(int(SaveData.get_value("selected_world", 1)), 1, 4)
+	var first_level := (world - 1) * 12 + 1
+	var last_level := first_level + 11
+	var unlocked := int(SaveData.get_value("unlocked_level", 1))
+	root.add_child(_label("%s   /   WORLD %02d" % [WORLD_NAMES[world - 1], world], 13, MUTED))
+	var progress := _label("YOUR JOURNEY     %d / 12 LEVELS" % clampi(unlocked - first_level, 0, 12), 15, Color("#FFD166"), true)
 	root.add_child(progress)
 	var grid := GridContainer.new()
 	grid.columns = 3
@@ -85,6 +95,7 @@ func _build_level_select(root: VBoxContainer) -> void:
 
 func _start_level(level: int) -> void:
 	SaveData.set_value("current_level", level)
+	SaveData.set_value("active_mode", "classic")
 	SaveData.set_value("adventure_active", true)
 	AppRouter.start_classic()
 
