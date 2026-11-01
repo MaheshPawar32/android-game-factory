@@ -56,12 +56,12 @@ func cell_from_position(position: Vector2) -> Vector2i:
 	var count := _grid_size()
 	var cell_size := _cell_size()
 	var step := cell_size + GAP
-	var local := position - Vector2(INSET, INSET)
+	var local := position - _board_origin()
 	return Vector2i(floori(local.x / step), floori(local.y / step))
 
 func is_inside_board(position: Vector2) -> bool:
 	var side := _board_side()
-	return Rect2(Vector2(INSET, INSET), Vector2(side, side)).has_point(position)
+	return Rect2(_board_origin(), Vector2(side, side)).has_point(position)
 
 func _grid_size() -> int:
 	return int(board_model.size) if board_model != null else 5
@@ -72,6 +72,10 @@ func _board_side() -> float:
 func _cell_size() -> float:
 	var count := _grid_size()
 	return (_board_side() - GAP * (count - 1)) / count
+
+func _board_origin() -> Vector2:
+	var side := _board_side()
+	return Vector2((size.x - side) * 0.5, (size.y - side) * 0.5) + Vector2(INSET, INSET)
 
 func flash_special_cells(points: Array, color: Color) -> void:
 	_special_flash_cells.clear()
@@ -104,7 +108,8 @@ func _draw() -> void:
 	var step := cell + GAP
 	for y in range(count):
 		for x in range(count):
-			var rect := Rect2(Vector2(INSET + x * step, INSET + y * step), Vector2(cell, cell))
+			var origin := _board_origin()
+			var rect := Rect2(origin + Vector2(x * step, y * step), Vector2(cell, cell))
 			var value: int = board_model.get_cell(x, y)
 			var fill := Color("#202B45")
 			if value != -1:
@@ -122,7 +127,8 @@ func _draw() -> void:
 			var point := preview_origin + offset
 			if point.x < 0 or point.x >= count or point.y < 0 or point.y >= count:
 				continue
-			var rect := Rect2(Vector2(INSET + point.x * step, INSET + point.y * step), Vector2(cell, cell))
+			var origin := _board_origin()
+			var rect := Rect2(origin + Vector2(point.x * step, point.y * step), Vector2(cell, cell))
 			var ghost := Color("#55E6B7", 0.62) if preview_valid else Color("#FF5368", 0.62)
 			draw_rect(rect, ghost, true)
 			draw_rect(rect, Color.WHITE, false, 1.5)
