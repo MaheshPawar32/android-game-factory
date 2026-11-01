@@ -19,6 +19,10 @@
 - Animated board pulse and special-block burst particles.
 - Procedurally generated placement, clear, bomb, win, and fail sound effects (no external audio assets required).
 - Persistent in-game sound toggle saved locally.
+- Main menu with Play, Level Select, Daily Reward and Settings.
+- 20-level selection grid with locked/unlocked progression.
+- Daily login reward with a seven-day streak cycle, claimed once per local calendar day.
+- Persistent vibration preference and haptic feedback on successful placements.
 - Deterministic obstacles and procedural level configuration.
 - Editor setup menu creates the starter scene and configures Android identity/build scene.
 
