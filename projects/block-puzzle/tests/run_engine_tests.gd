@@ -23,6 +23,8 @@ func _initialize() -> void:
 	_test_special_effect_bounds()
 	_test_rainbow_line()
 	_test_lightning_connectivity()
+	_test_special_resolution()
+	_test_special_generator_distribution()
 	print("\nBLOCKVERSE ENGINE TESTS: %d passed, %d failed" % [passed, failed])
 	quit(1 if failed > 0 else 0)
 
@@ -118,3 +120,40 @@ func _test_lightning_connectivity() -> void:
 	board.cells[8][8] = 1
 	var cells: Array[Vector2i] = Specials.lightning_connected_cells(board, Vector2i(1, 1))
 	_check(cells.size() == 3, "lightning finds connected orthogonal cluster only")
+
+func _test_special_resolution() -> void:
+	var bomb_board = Board.new()
+	for y in range(3, 8):
+		for x in range(3, 8):
+			bomb_board.cells[y][x] = 1
+	var bomb: Dictionary = Specials.resolve(bomb_board, "bomb", Vector2i(5, 5))
+	_check(bomb.cells.size() == 9 and bomb_board.get_cell(5, 5) == Board.EMPTY, "bomb clears bounded 3x3 board area")
+
+	var rainbow_board = Board.new()
+	for x in range(Board.SIZE):
+		rainbow_board.cells[4][x] = 2
+	var rainbow: Dictionary = Specials.resolve(rainbow_board, "rainbow", Vector2i(2, 4))
+	_check(rainbow.cells.size() == Board.SIZE and rainbow_board.get_cell(0, 4) == Board.EMPTY, "rainbow clears its selected row")
+
+	var lightning_board = Board.new()
+	lightning_board.cells[1][1] = 1
+	lightning_board.cells[1][2] = 1
+	lightning_board.cells[2][2] = 1
+	lightning_board.cells[8][8] = 1
+	var lightning: Dictionary = Specials.resolve(lightning_board, "lightning", Vector2i(1, 1))
+	_check(lightning.cells.size() == 3 and lightning_board.get_cell(2, 2) == Board.EMPTY, "lightning clears connected cluster only")
+
+	var treasure_board = Board.new()
+	treasure_board.cells[0][0] = 3
+	var treasure: Dictionary = Specials.resolve(treasure_board, "treasure", Vector2i(0, 0))
+	_check(treasure.coins == 25 and treasure_board.get_cell(0, 0) == 3, "treasure awards coins without clearing board")
+
+func _test_special_generator_distribution() -> void:
+	var generator = Generator.new()
+	generator.set_seed(20261101)
+	var seen: Dictionary = {}
+	for i in range(500):
+		var piece: Dictionary = generator.next_piece()
+		seen[str(piece.special_type)] = true
+	_check(seen.has("normal"), "generator includes normal pieces")
+	_check(seen.has("bomb") and seen.has("rainbow") and seen.has("lightning") and seen.has("treasure"), "seeded generator can produce every special type")
