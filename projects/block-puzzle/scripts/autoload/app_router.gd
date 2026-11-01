@@ -16,6 +16,14 @@ func open_mode_select() -> void:
 	_change_scene(MODE_SELECT)
 
 func start_classic() -> void:
+	start_mode("classic")
+
+func start_mode(mode_id: String) -> void:
+	SaveData.set_value("active_mode", mode_id)
+	if mode_id == "daily":
+		var date := Time.get_date_dict_from_system()
+		var date_key := "%04d%02d%02d" % [date.year, date.month, date.day]
+		SaveData.set_value("daily_seed", date_key.hash())
 	_change_scene(CLASSIC_GAME)
 
 func open_adventure_map() -> void:
