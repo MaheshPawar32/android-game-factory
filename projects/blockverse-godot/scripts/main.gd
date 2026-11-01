@@ -25,6 +25,15 @@ var board_grid: GridContainer
 var tray_container: HBoxContainer
 var score_label: Label
 var status_label: Label
+var level_label: Label
+var objective_label: Label
+var action_button: Button
+var current_level := 1
+var moves_used := 0
+var lines_cleared := 0
+var level_finished := false
+var move_limit := 18
+var line_target := 3
 
 func _ready() -> void:
 	randomize()
@@ -285,7 +294,7 @@ func _damage_obstacle(x: int, y: int) -> void:
 			board[y][x] = EMPTY
 			obstacle_hp[y][x] = 0
 
-func _clear_completed_lines() -> void:
+func _clear_completed_lines() -> int:
 	var rows: Array[int] = []
 	var columns: Array[int] = []
 	for y in range(BOARD_SIZE):
