@@ -11,6 +11,7 @@ config/features=PackedStringArray("4.4", "GL Compatibility")
 [autoload]
 SaveData="*res://scripts/autoload/save_data.gd"
 AppRouter="*res://scripts/autoload/app_router.gd"
+Feedback="*res://scripts/autoload/feedback.gd"
 
 [display]
 window/size/viewport_width=720
