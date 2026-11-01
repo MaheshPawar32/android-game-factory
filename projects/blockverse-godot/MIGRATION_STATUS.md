@@ -32,8 +32,15 @@ New project: `projects/blockverse-godot/`
 - Full row and column clearing.
 - Basic score counter and new-game reset.
 
+### Batch 4 — local economy and cosmetics
+- Local player save file using Godot `ConfigFile` in `user://`.
+- Best score, coin balance, selected theme and daily claim date are saved.
+- Daily reward grants 100 coins once per device-local calendar day.
+- Three palette themes; the first is free and the next themes cost 150 coins each.
+- Clearing lines awards 5 coins per cleared row/column.
+
 ## Not yet migrated
-Persistent level/score saving; daily rewards; shop and themes; daily missions; achievements; pause; revive; undo; audio; haptics; drag-and-drop controls.
+Persistent level/board state; full shop inventory and owned-theme catalogue; daily missions; achievements; pause; revive; undo; audio; haptics; drag-and-drop controls.
 
 ## Validation
 Files have been committed only. Open/import in Godot Android Editor and test on device before treating this batch as passing. APK/AAB export has not been performed.
