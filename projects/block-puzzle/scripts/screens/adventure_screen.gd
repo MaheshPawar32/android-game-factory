@@ -78,6 +78,8 @@ func _build_level_select(root: VBoxContainer) -> void:
 	root.add_child(_label("%s   /   WORLD %02d" % [WORLD_NAMES[world - 1], world], 13, MUTED))
 	var progress := _label("YOUR JOURNEY     %d / 12 LEVELS" % clampi(unlocked - first_level, 0, 12), 15, Color("#FFD166"), true)
 	root.add_child(progress)
+	var target_lines := 3 + int((first_level - 1) / 4)
+	root.add_child(_label("LEVEL OBJECTIVE  •  CLEAR %d LINES" % target_lines, 12, TEAL, true))
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
