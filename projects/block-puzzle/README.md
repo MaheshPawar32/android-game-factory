@@ -132,3 +132,18 @@ Implemented:
 ### Validation status
 
 The screen scripts and scene/router changes are committed and available in the repository. Godot runtime parsing, scene navigation, input behavior, and Android device layout have **not been executed or verified** in this session. The world map currently presents four themed world cards with the first world playable; world-specific progression and art assets remain future polish.
+
+## Batch 6 — Gameplay polish, feedback and transitions
+
+Implemented:
+- Procedural lightweight sound effects generated at runtime for placement, invalid moves, line clears, combos, and treasure rewards; no imported audio files or paid sound packs are required.
+- Android haptic feedback for placement, invalid moves, line clears, treasure, and level victory, respecting the saved vibration setting.
+- Sound playback respects the saved sound setting.
+- Placed-cell flash animation with a short tween.
+- Existing line-clear and special-cell flashes retained and integrated with feedback sounds/haptics.
+- Square board now centers itself inside the available gameplay area, improving fit across different portrait aspect ratios and board sizes.
+- Scene navigation now uses a short fade transition overlay.
+
+### Validation status
+
+All changes are committed and source was retrieved from GitHub for inspection. No Godot runtime, Android device, audio output, or haptic device test was run in this session. Audio synthesis, Android vibration permissions/device behavior, fade transitions, and layout on small screens remain **NOT VERIFIED** until tested in Godot 4.4 and on a physical Android device.
