@@ -234,3 +234,15 @@ The Adventure scripts were retrieved from GitHub after the final commits for sou
 
 ### Validation
 Source committed and retrieved for inspection. The procedural level generator is deterministic by design; Godot 4.4 headless tests, GDScript parsing, and Android APK export must still pass in GitHub Actions before this can be considered runtime-verified.
+
+
+## Batch 12 — Procedural challenge variety
+
+- Every fifth level introduces a limited-move objective.
+- Every seventh level introduces a score-target trial; levels divisible by both 5 and 7 combine the score target with a move limit.
+- Every 25th level becomes a boss stage: double line-clear objective with a tighter move budget.
+- Challenge configuration is deterministic from the level number and is shown in the gameplay objective/status line.
+- Running out of moves displays a retry-level failure dialog. Completing a level continues to award stars and unlock the next generated level.
+- Added engine tests for move-limited, score-trial, and boss-stage configuration.
+
+Validation: source committed and inspected. Godot runtime parsing, automated tests, and Android export are not yet verified.
