@@ -1,7 +1,7 @@
 # Game projects
 
-Create one folder per game under this directory. Each folder should contain its own `project.godot` and Android export preset.
+Active Unity project:
 
-Example: `projects/block-puzzle/`
+- [BLOCKVERSE Unity](blockverse-unity/) — Unity 6 Android block puzzle game.
 
-Use the repository's **Android Export** workflow to build a project by entering its folder path.
+Each game lives in its own self-contained project folder.
