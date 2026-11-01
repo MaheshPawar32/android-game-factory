@@ -14,7 +14,7 @@ const BOARD_SKINS := {
 	"ocean": {"title": "Deep Ocean", "price": 260, "colors": ["#00B4D8", "#0077B6", "#48CAE4", "#90E0EF", "#4361EE", "#4CC9F0"]},
 	"forest": {"title": "Forest Calm", "price": 300, "colors": ["#588157", "#A3B18A", "#DAD7CD", "#3A5A40", "#6A994E", "#BC6C25"]}
 }
-const ACHIEVEMENTS :=
+const ACHIEVEMENTS := {
 	"first_game": {"title": "First Steps", "description": "Finish your first round", "target": 1, "reward": 30},
 	"first_line": {"title": "Line Maker", "description": "Clear your first line", "target": 1, "reward": 30},
 	"score_500": {"title": "Rising Star", "description": "Reach a score of 500", "target": 500, "reward": 50},
