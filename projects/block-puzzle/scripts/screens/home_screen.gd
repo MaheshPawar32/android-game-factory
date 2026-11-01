@@ -132,15 +132,24 @@ func _show_coming_soon(feature: String) -> void:
 
 func _show_settings() -> void:
 	var dialog := ConfirmationDialog.new()
-	dialog.title = "Settings"
-	dialog.dialog_text = "Sound: %s\nMusic: %s\nVibration: %s\n\nSettings screen will be expanded in a later batch." % [
-		"On" if SaveData.get_setting("sound", true) else "Off",
-		"On" if SaveData.get_setting("music", true) else "Off",
-		"On" if SaveData.get_setting("vibration", true) else "Off"
-	]
+	dialog.title = "GAME SETTINGS"
+	dialog.dialog_text = "Choose the feedback you want during play."
+	var options := VBoxContainer.new()
+	for setting in [
+		["sound", "Sound effects"],
+		["music", "Music"],
+		["vibration", "Haptic feedback"],
+		["notifications", "Notifications"]
+	]:
+		var toggle := CheckButton.new()
+		toggle.text = setting[1]
+		toggle.button_pressed = bool(SaveData.get_setting(setting[0], true))
+		toggle.toggled.connect(func(enabled: bool): SaveData.update_setting(setting[0], enabled))
+		options.add_child(toggle)
+	dialog.add_child(options)
+	dialog.get_ok_button().text = "DONE"
 	add_child(dialog)
-	dialog.get_ok_button().text = "Close"
-	dialog.popup_centered()
+	dialog.popup_centered(Vector2i(360, 300))
 
 func _format_number(value: int) -> String:
 	var text := str(value)
