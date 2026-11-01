@@ -283,8 +283,8 @@ func _on_cell_pressed(x: int, y: int) -> void:
 
 func _can_place(shape: Array, origin_x: int, origin_y: int) -> bool:
 	for p in shape:
-		var x := origin_x + p.x
-		var y := origin_y + p.y
+		var x: int = origin_x + int(p.x)
+		var y: int = origin_y + int(p.y)
 		if x < 0 or y < 0 or x >= BOARD_SIZE or y >= BOARD_SIZE or board[y][x] != EMPTY:
 			return false
 	return true
