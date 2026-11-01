@@ -112,7 +112,7 @@ func _test_rainbow_line() -> void:
 	var board = Board.new()
 	board.cells[2][0] = 1
 	board.cells[2][4] = 2
-	var cells: Array[Vector2i] = Specials.rainbow_line_cells(board, true, 2)
+	var cells: Array[Vector2i] = SpecialResolverScript.rainbow_line_cells(board, true, 2)
 	_check(cells.size() == 2, "rainbow returns occupied cells in chosen row")
 	_check(Specials.rainbow_line_cells(board, false, 12).is_empty(), "rainbow rejects invalid line index")
 
