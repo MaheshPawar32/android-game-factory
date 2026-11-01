@@ -545,7 +545,9 @@ func _show_victory_screen() -> void:
 	Feedback.vibrate(100)
 	SaveData.record_game_completed(score)
 	var current := int(SaveData.get_value("current_level", 1))
-	SaveData.set_value("unlocked_level", maxi(int(SaveData.get_value("unlocked_level", 1)), current + 1))
+	var next_level := current + 1
+	SaveData.set_value("unlocked_level", maxi(int(SaveData.get_value("unlocked_level", 1)), next_level))
+	SaveData.set_value("unlocked_world", clampi(int(ceil(float(next_level) / 12.0)), 1, 4))
 	var reward := 50 + current * 5
 	SaveData.add_coins(reward, "Adventure level %d" % current)
 	var dialog := AcceptDialog.new()
