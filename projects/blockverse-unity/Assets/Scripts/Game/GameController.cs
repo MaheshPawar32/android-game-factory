@@ -246,6 +246,7 @@ namespace Blockverse
             }
 
             movesUsed++;
+            if (vibrationEnabled) Handheld.Vibrate();
             int centerX = x + piece.Shape.GetLength(1) / 2;
             int centerY = y + piece.Shape.GetLength(0) / 2;
             int affected = 0;
