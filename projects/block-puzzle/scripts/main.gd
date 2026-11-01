@@ -222,11 +222,29 @@ func _special_icon(special_type: String) -> String:
 
 func _special_color(special_type: String) -> Color:
 	match special_type:
-		"bomb": return Color("#573044")
-		"rainbow": return Color("#3B315F")
-		"lightning": return Color("#51431F")
-		"treasure": return Color("#234D50")
+		"bomb": return Color("#FF658B")
+		"rainbow": return Color("#B18CFF")
+		"lightning": return Color("#FFB547")
+		"treasure": return Color("#20C8D9")
 		_: return Color("#202943")
+
+func _input(event: InputEvent) -> void:
+	if not drag_active or selected_piece < 0:
+		return
+	if event is InputEventScreenDrag:
+		_update_drag_from_screen(event.position)
+	elif event is InputEventMouseMotion:
+		_update_drag_from_screen(event.position)
+	elif event is InputEventScreenTouch and not event.pressed:
+		_release_drag_from_screen(event.position)
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+		_release_drag_from_screen(event.position)
+
+func _release_drag_from_screen(screen_position: Vector2) -> void:
+	var local := board_view.get_global_transform_with_canvas().affine_inverse() * screen_position
+	if board_view.is_inside_board(local):
+		_try_place_selected(board_view.cell_from_position(local))
+	_finish_drag()
 
 func _on_piece_tap(index: int) -> void:
 	if game_over or pieces[index].is_empty():
@@ -300,6 +318,8 @@ func _try_place_selected(origin: Vector2i) -> void:
 	var special_result: Dictionary = {"cells": [], "coins": 0, "message": ""}
 	if special_type != "normal":
 		special_result = SpecialResolver.resolve(board, special_type, origin)
+		var effect_color := _special_color(special_type)
+		board_view.flash_special_cells(special_result.cells, effect_color)
 		if int(special_result.coins) > 0:
 			SaveData.add_coins(int(special_result.coins))
 		_set_status(str(special_result.message))
