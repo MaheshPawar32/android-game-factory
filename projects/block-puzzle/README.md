@@ -220,3 +220,17 @@ Source committed and retrieved from GitHub. Godot runtime parsing, deterministic
 
 ### Validation
 The Adventure scripts were retrieved from GitHub after the final commits for source inspection. Godot headless parsing, scene navigation, level unlock behavior, and Android layout still require a successful GitHub Actions run and device testing.
+
+
+## Batch 11 — 5,000+ procedural Adventure levels
+
+- Replaced the fixed four-world campaign with a generated world and level browser. Each world contains 12 levels; world names cycle through themed sets with numbered variants.
+- The campaign supports level numbers through 999,999 (so 5,000+ levels are available without storing thousands of scene files).
+- Every level derives a deterministic seed, objective, suggested board size, difficulty label, and coin reward from its global level number.
+- Adventure piece sequences are seeded by level, so replaying the same level recreates its piece sequence.
+- Objectives rise gradually and cap at 20 lines; level rewards rise and cap at 500 coins.
+- Completed levels save best score and up to three stars locally. The next global level unlocks automatically.
+- Fixed all remaining `Specials` aliases in the engine test runner and added procedural-level coverage.
+
+### Validation
+Source committed and retrieved for inspection. The procedural level generator is deterministic by design; Godot 4.4 headless tests, GDScript parsing, and Android APK export must still pass in GitHub Actions before this can be considered runtime-verified.
