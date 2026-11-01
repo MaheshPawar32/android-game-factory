@@ -209,6 +209,8 @@ func _show_board_size_picker() -> void:
 	dialog.popup_centered(Vector2i(360, 180))
 
 func _new_game() -> void:
+	if active_mode == "daily":
+		generator.set_seed(int(SaveData.get_value("daily_seed", 1)))
 	board.reset()
 	score = 0
 	combo = 0
