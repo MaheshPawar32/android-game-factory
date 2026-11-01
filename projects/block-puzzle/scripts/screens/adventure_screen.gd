@@ -74,7 +74,7 @@ func _build_world_map(root: VBoxContainer) -> void:
 func _build_level_select(root: VBoxContainer) -> void:
 	var world := clampi(int(SaveData.get_value("selected_world", 1)), 1, 4)
 	var first_level := (world - 1) * 12 + 1
-		var unlocked := int(SaveData.get_value("unlocked_level", 1))
+	var unlocked := int(SaveData.get_value("unlocked_level", 1))
 	root.add_child(_label("%s   /   WORLD %02d" % [WORLD_NAMES[world - 1], world], 13, MUTED))
 	var progress := _label("YOUR JOURNEY     %d / 12 LEVELS" % clampi(unlocked - first_level, 0, 12), 15, Color("#FFD166"), true)
 	root.add_child(progress)
@@ -88,7 +88,7 @@ func _build_level_select(root: VBoxContainer) -> void:
 		var global_level := first_level + local_level
 		var is_unlocked := global_level <= unlocked
 		var marker := "★" if global_level < unlocked else ("▶" if is_unlocked else "🔒")
-		var tile := _button("%02d\\n%s" % [local_level + 1, marker], TEAL if global_level == unlocked else PANEL)
+		var tile := _button("%02d\n%s" % [local_level + 1, marker], TEAL if global_level == unlocked else PANEL)
 		tile.custom_minimum_size = Vector2(90, 92)
 		tile.disabled = not is_unlocked
 		tile.pressed.connect(func(): _start_level(global_level))
