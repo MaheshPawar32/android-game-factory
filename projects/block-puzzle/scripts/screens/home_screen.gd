@@ -74,11 +74,11 @@ func _build_screen() -> void:
 	var shortcuts := HBoxContainer.new()
 	shortcuts.add_theme_constant_override("separation", 12)
 	layout.add_child(shortcuts)
-	for item in ["MISSIONS", "WALLET", "PROFILE"]:
+	for item in ["MISSIONS", "SHOP", "PROFILE"]:
 		var shortcut := _button(item, BlockverseTheme.SURFACE, BlockverseTheme.SURFACE_RAISED)
 		shortcut.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		shortcut.custom_minimum_size.y = 58
-		shortcut.pressed.connect(func(): AppRouter.open_progression())
+		shortcut.pressed.connect(func(): AppRouter.open_shop() if item == "SHOP" else AppRouter.open_progression())
 		shortcuts.add_child(shortcut)
 
 	var settings := _button("⚙  SETTINGS", BlockverseTheme.SURFACE, BlockverseTheme.SURFACE_RAISED)
