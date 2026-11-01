@@ -212,10 +212,16 @@ namespace Blockverse
             for (int i = 0; i < 8; i++)
             {
                 var particle = new GameObject("BlockBurst", typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
-                particle.transform.SetParent(boardRoot, false);
+                // Keep effects outside the GridLayoutGroup. Board refresh expects
+                // exactly one child per cell; particles inside boardRoot corrupt that mapping.
+                Transform effectsParent = boardRoot.parent != null ? boardRoot.parent : boardRoot;
+                particle.transform.SetParent(effectsParent, false);
                 var rect = particle.GetComponent<RectTransform>();
                 rect.sizeDelta = new Vector2(14, 14);
-                rect.anchoredPosition = position;
+                if (effectsParent == boardRoot)
+                    rect.anchoredPosition = position;
+                else
+                    rect.position = boardRoot.TransformPoint(position);
                 particle.GetComponent<Image>().color = color;
                 StartCoroutine(AnimateParticle(rect, particle.GetComponent<CanvasGroup>(), i * Mathf.PI / 4f));
             }
