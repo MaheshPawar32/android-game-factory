@@ -6,6 +6,7 @@ const MODE_SELECT := "res://scenes/mode_select.tscn"
 const CLASSIC_GAME := "res://scenes/main.tscn"
 const ADVENTURE_MAP := "res://scenes/adventure_map.tscn"
 const LEVEL_SELECT := "res://scenes/level_select.tscn"
+const PROGRESSION := "res://scenes/progression.tscn"
 
 func go_home() -> void:
 	_change_scene(HOME)
@@ -21,6 +22,9 @@ func open_adventure_map() -> void:
 
 func open_level_select() -> void:
 	_change_scene(LEVEL_SELECT)
+
+func open_progression() -> void:
+	_change_scene(PROGRESSION)
 
 func _change_scene(path: String) -> void:
 	var current := get_tree().current_scene
