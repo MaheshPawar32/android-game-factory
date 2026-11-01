@@ -404,6 +404,8 @@ func _try_place_selected(origin: Vector2i) -> void:
 	var cleared: int = int(result.lines_cleared)
 	level_lines += cleared
 	if cleared > 0:
+		if active_mode == "combo_rush":
+			mode_misses = 0
 		SaveData.record_lines_cleared(cleared)
 		SaveData.record_combo(combo + 1)
 		combo += 1
