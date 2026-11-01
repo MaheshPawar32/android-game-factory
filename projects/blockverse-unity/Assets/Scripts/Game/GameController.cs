@@ -15,7 +15,8 @@ namespace Blockverse
         private LevelConfig config;
         private readonly List<PieceDragView> trayPieces = new List<PieceDragView>();
         private bool levelFinished;
-        private GameObject resultOverlay;
+        private GameObject resultOverlay, menuOverlay;
+        private bool vibrationEnabled;
         private GameAudio gameAudio;
         private Button audioButton;
         private readonly List<Coroutine> runningEffects = new List<Coroutine>();
@@ -27,8 +28,10 @@ namespace Blockverse
             coins = PlayerPrefs.GetInt("blockverse_coins", 0);
             level = PlayerPrefs.GetInt("blockverse_level", 1);
             if (restartButton != null) restartButton.onClick.AddListener(StartLevel);
+            vibrationEnabled = PlayerPrefs.GetInt("blockverse_vibration", 1) == 1;
             CreateAudioToggle();
             StartLevel();
+            ShowMainMenu();
         }
 
         private void CreateAudioToggle()
@@ -68,6 +71,7 @@ namespace Blockverse
         {
             levelFinished = false;
             if (resultOverlay != null) Destroy(resultOverlay);
+            if (menuOverlay != null) Destroy(menuOverlay);
             config = LevelGenerator.Generate(level);
             board = new BoardModel(config.BoardSize, config.BoardSize);
             score = linesCleared = movesUsed = piecesUsed = 0;
@@ -76,6 +80,99 @@ namespace Blockverse
             RefreshLabels();
             BuildBoard();
             GenerateTray();
+            CreateMenuButton();
+        }
+
+        private void CreateMenuButton()
+        {
+            Canvas canvas = boardRoot != null ? boardRoot.GetComponentInParent<Canvas>() : null;
+            if (canvas == null || canvas.transform.Find("GameMenuButton") != null) return;
+            var go = new GameObject("GameMenuButton", typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(canvas.transform, false);
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0, 1); rect.anchorMax = new Vector2(0, 1);
+            rect.pivot = new Vector2(0, 1); rect.anchoredPosition = new Vector2(28, -28);
+            rect.sizeDelta = new Vector2(125, 64);
+            go.GetComponent<Image>().color = new Color(.13f, .2f, .32f, 1);
+            go.GetComponent<Button>().onClick.AddListener(ShowMainMenu);
+            CreateOverlayText(go.transform, "MENU", 23, Vector2.zero, new Vector2(120, 60), Color.white);
+        }
+
+        private Canvas GetCanvas() => boardRoot != null ? boardRoot.GetComponentInParent<Canvas>() : null;
+
+        private void ShowMainMenu()
+        {
+            Canvas canvas = GetCanvas(); if (canvas == null) return;
+            if (menuOverlay != null) Destroy(menuOverlay);
+            menuOverlay = CreateMenuOverlay(canvas, "BLOCKVERSE", "BLOCK PUZZLE ADVENTURE");
+            CreateOverlayButton(menuOverlay.transform, "PLAY", new Vector2(0, 95), () => { Destroy(menuOverlay); menuOverlay = null; });
+            CreateOverlayButton(menuOverlay.transform, "LEVEL SELECT", new Vector2(0, -15), ShowLevelSelect);
+            CreateOverlayButton(menuOverlay.transform, "DAILY REWARD", new Vector2(0, -125), ClaimDailyReward);
+            CreateOverlayButton(menuOverlay.transform, "SETTINGS", new Vector2(0, -235), ShowSettings);
+        }
+
+        private GameObject CreateMenuOverlay(Canvas canvas, string title, string subtitle)
+        {
+            var overlay = new GameObject("MenuOverlay", typeof(RectTransform), typeof(Image));
+            overlay.transform.SetParent(canvas.transform, false);
+            var full = overlay.GetComponent<RectTransform>(); full.anchorMin = Vector2.zero; full.anchorMax = Vector2.one; full.offsetMin = Vector2.zero; full.offsetMax = Vector2.zero;
+            overlay.GetComponent<Image>().color = new Color(.025f, .04f, .08f, .96f);
+            CreateOverlayText(overlay.transform, title, 64, new Vector2(0, 285), new Vector2(850, 110), new Color(1f, .78f, .25f));
+            CreateOverlayText(overlay.transform, subtitle, 24, new Vector2(0, 220), new Vector2(850, 55), Color.white);
+            return overlay;
+        }
+
+        private void ShowLevelSelect()
+        {
+            Canvas canvas = GetCanvas(); if (canvas == null) return;
+            if (menuOverlay != null) Destroy(menuOverlay);
+            menuOverlay = CreateMenuOverlay(canvas, "LEVELS", "CHOOSE YOUR CHALLENGE");
+            int unlocked = Mathf.Max(1, PlayerPrefs.GetInt("blockverse_level", 1));
+            for (int i = 1; i <= 20; i++)
+            {
+                int selected = i; int col = (i - 1) % 4; int row = (i - 1) / 4;
+                var go = new GameObject("Level_" + i, typeof(RectTransform), typeof(Image), typeof(Button));
+                go.transform.SetParent(menuOverlay.transform, false);
+                var rect = go.GetComponent<RectTransform>(); rect.sizeDelta = new Vector2(145, 105);
+                rect.anchoredPosition = new Vector2(-255 + col * 170, 95 - row * 125);
+                bool open = i <= unlocked;
+                go.GetComponent<Image>().color = open ? new Color(.15f, .48f, .82f) : new Color(.18f, .21f, .27f);
+                var button = go.GetComponent<Button>(); button.interactable = open;
+                button.onClick.AddListener(() => { level = selected; PlayerPrefs.SetInt("blockverse_level", Mathf.Max(unlocked, selected)); PlayerPrefs.Save(); StartLevel(); });
+                CreateOverlayText(go.transform, open ? i.ToString() : "LOCKED", 23, Vector2.zero, new Vector2(140, 100), Color.white);
+            }
+            CreateOverlayButton(menuOverlay.transform, "BACK", new Vector2(0, -300), ShowMainMenu);
+        }
+
+        private void ClaimDailyReward()
+        {
+            string today = System.DateTime.Now.ToString("yyyy-MM-dd");
+            string last = PlayerPrefs.GetString("blockverse_daily_date", "");
+            if (last == today) { ShowMessage("REWARD CLAIMED", "Come back tomorrow for your next reward."); return; }
+            int streak = last == System.DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd") ? PlayerPrefs.GetInt("blockverse_daily_streak", 0) + 1 : 1;
+            streak = ((streak - 1) % 7) + 1;
+            int reward = 25 + streak * 10; coins += reward;
+            PlayerPrefs.SetString("blockverse_daily_date", today); PlayerPrefs.SetInt("blockverse_daily_streak", streak);
+            PlayerPrefs.SetInt("blockverse_coins", coins); PlayerPrefs.Save(); RefreshLabels();
+            ShowMessage("DAILY REWARD!", $"DAY {streak} STREAK\n+{reward} COINS");
+        }
+
+        private void ShowSettings()
+        {
+            Canvas canvas = GetCanvas(); if (canvas == null) return;
+            if (menuOverlay != null) Destroy(menuOverlay);
+            menuOverlay = CreateMenuOverlay(canvas, "SETTINGS", "MAKE THE GAME YOURS");
+            CreateOverlayButton(menuOverlay.transform, gameAudio.Muted ? "SOUND: OFF" : "SOUND: ON", new Vector2(0, 80), () => { gameAudio.ToggleMute(); RefreshAudioButton(); ShowSettings(); });
+            CreateOverlayButton(menuOverlay.transform, vibrationEnabled ? "VIBRATION: ON" : "VIBRATION: OFF", new Vector2(0, -35), () => { vibrationEnabled = !vibrationEnabled; PlayerPrefs.SetInt("blockverse_vibration", vibrationEnabled ? 1 : 0); PlayerPrefs.Save(); ShowSettings(); });
+            CreateOverlayButton(menuOverlay.transform, "BACK", new Vector2(0, -160), ShowMainMenu);
+        }
+
+        private void ShowMessage(string heading, string message)
+        {
+            Canvas canvas = GetCanvas(); if (canvas == null) return;
+            if (menuOverlay != null) Destroy(menuOverlay);
+            menuOverlay = CreateMenuOverlay(canvas, heading, message);
+            CreateOverlayButton(menuOverlay.transform, "CONTINUE", new Vector2(0, -100), ShowMainMenu);
         }
 
         private void BuildBoard()
