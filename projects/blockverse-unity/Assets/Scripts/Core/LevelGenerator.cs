@@ -6,7 +6,7 @@ namespace Blockverse
 
     public sealed class LevelConfig
     {
-        public int Level { get; init; }
+        public int Level { get; set; }
         public int Seed { get; init; }
         public int BoardSize { get; init; }
         public int Target { get; init; }
@@ -20,7 +20,6 @@ namespace Blockverse
         public static LevelConfig Generate(int level)
         {
             level = Math.Max(1, level);
-            var random = new Random(level * 7919);
             bool boss = level % 25 == 0;
             bool scoreTrial = !boss && level % 7 == 0;
             bool limitedMoves = !boss && level % 5 == 0;
