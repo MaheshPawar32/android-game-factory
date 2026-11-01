@@ -69,13 +69,12 @@ func _build_world_map(root: VBoxContainer) -> void:
 		open.disabled = i > unlocked
 		open.pressed.connect(func(): SaveData.set_value("selected_world", i); AppRouter.open_level_select())
 		row.add_child(open)
-	_add_bottom_button(root, "CONTINUE ADVENTURE", TEAL, func(): AppRouter.open_level_select())
+	_add_bottom_button(root, "CONTINUE ADVENTURE", TEAL, func(): SaveData.set_value("selected_world", clampi(int(ceil(float(unlocked_level) / 12.0)), 1, 4)); AppRouter.open_level_select())
 
 func _build_level_select(root: VBoxContainer) -> void:
 	var world := clampi(int(SaveData.get_value("selected_world", 1)), 1, 4)
 	var first_level := (world - 1) * 12 + 1
-	var last_level := first_level + 11
-	var unlocked := int(SaveData.get_value("unlocked_level", 1))
+		var unlocked := int(SaveData.get_value("unlocked_level", 1))
 	root.add_child(_label("%s   /   WORLD %02d" % [WORLD_NAMES[world - 1], world], 13, MUTED))
 	var progress := _label("YOUR JOURNEY     %d / 12 LEVELS" % clampi(unlocked - first_level, 0, 12), 15, Color("#FFD166"), true)
 	root.add_child(progress)
@@ -85,11 +84,14 @@ func _build_level_select(root: VBoxContainer) -> void:
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
 	root.add_child(grid)
-	for i in range(1, 13):
-		var tile := _button("%02d\n%s" % [i, "★" if i < level else ("▶" if i == level else "🔒")], TEAL if i == level else PANEL)
+	for local_level in range(12):
+		var global_level := first_level + local_level
+		var is_unlocked := global_level <= unlocked
+		var marker := "★" if global_level < unlocked else ("▶" if is_unlocked else "🔒")
+		var tile := _button("%02d\\n%s" % [local_level + 1, marker], TEAL if global_level == unlocked else PANEL)
 		tile.custom_minimum_size = Vector2(90, 92)
-		tile.disabled = i > level
-		tile.pressed.connect(func(): _start_level(i))
+		tile.disabled = not is_unlocked
+		tile.pressed.connect(func(): _start_level(global_level))
 		grid.add_child(tile)
 	_add_bottom_button(root, "BACK TO WORLDS", Color("#293657"), func(): AppRouter.open_adventure_map())
 
