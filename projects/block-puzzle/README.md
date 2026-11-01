@@ -30,7 +30,7 @@ Open `projects/block-puzzle/project.godot` in Godot 4.4.x.
 
 ## Current implementation status
 
-The classic board is an early prototype. The other modes, 100 levels, special blocks, drag-and-drop, progression, ads, audio, notifications, and full screen set are not yet implemented. Buttons for later features are explicitly marked as planned rather than pretending those features are complete.
+The classic board, special blocks, adventure starter path, local progression, feedback, and core navigation are implemented. Multiple additional modes, full 100-level/world content, AdMob, music tracks, notification scheduling, cosmetics/shop, and final art/animation polish remain future milestones.
 
 ## Next milestones
 
@@ -147,3 +147,38 @@ Implemented:
 ### Validation status
 
 All changes are committed and source was retrieved from GitHub for inspection. No Godot runtime, Android device, audio output, or haptic device test was run in this session. Audio synthesis, Android vibration permissions/device behavior, fade transitions, and layout on small screens remain **NOT VERIFIED** until tested in Godot 4.4 and on a physical Android device.
+
+## Batch 7 — Player progression and daily retention
+
+Implemented:
+- Version 3 local-save migration while preserving existing player data and settings.
+- XP awards for block placement, line clears, completed rounds, missions, and achievements.
+- Progressive level thresholds and 25-coin level-up rewards.
+- Three daily missions: place 25 blocks, clear 5 lines, and play 2 rounds.
+- Daily mission progress and claim state reset by the device's local calendar date.
+- Five one-time achievements with coin rewards.
+- Coin wallet with a recent 20-entry reward history.
+- New progression screen showing level/XP, missions, achievements, and wallet history.
+- Home screen missions, wallet, profile, and daily challenge shortcuts route to the progression hub.
+- Interactive saved sound, music, vibration, and notification toggles.
+- Gameplay events now update progression and mission progress.
+
+### Batch 7 validation
+
+GitHub Actions headless engine tests and Android export are being run against the current branch. The initial engine test run exposed legacy test references to the removed fixed board-size constant; those tests have been updated to use the dynamic board dimensions. Do not mark the latest run passed until its final GitHub Actions result is successful.
+
+## Android cloud build
+
+- Added an Android export preset for com.dev.blockverse (ARM64).
+- Added a push-triggered GitHub Actions workflow that exports a debug APK and uploads it as the BLOCKVERSE-Android-APK artifact.
+- The APK can be downloaded from the successful workflow run's Artifacts section.
+- This is a debug APK for device testing, not a signed Play Store release. A production release requires your own signing keystore and credentials.
+
+## Remaining release work
+
+- Implement and validate Daily Challenge, Zen, Combo Rush, and Time Attack as distinct playable modes.
+- Expand Adventure beyond the current first-world/12-level starter path and complete all world-specific content.
+- Implement a real cosmetic shop/inventory and player profile editing.
+- Integrate and test AdMob with consent and Android app IDs before enabling ads.
+- Add music, notification scheduling, more complete screen coverage, and production art.
+- Run full Android device testing (touch layouts, lifecycle, sound, vibration, save migration, performance) and prepare a signed release build.
