@@ -11,7 +11,7 @@ namespace Blockverse
         [SerializeField] private Text scoreLabel, goalLabel, hintLabel;
         [SerializeField] private Button restartButton;
         private BoardModel board;
-        private int score, level = 1, randomSeed, piecesUsed, bestScore, coins, linesCleared, movesUsed;
+        private int score, level = 1, randomSeed, piecesUsed, bestScore, coins, linesCleared, movesUsed, comboStreak;
         private LevelConfig config;
         private readonly List<PieceDragView> trayPieces = new List<PieceDragView>();
         private bool levelFinished;
@@ -74,7 +74,7 @@ namespace Blockverse
             if (menuOverlay != null) Destroy(menuOverlay);
             config = LevelGenerator.Generate(level);
             board = new BoardModel(config.BoardSize, config.BoardSize);
-            score = linesCleared = movesUsed = piecesUsed = 0;
+            score = linesCleared = movesUsed = piecesUsed = comboStreak = 0;
             randomSeed = config.Seed;
             PlaceLevelObstacles();
             RefreshLabels();
@@ -259,9 +259,11 @@ namespace Blockverse
 
             int cleared = board.ClearCompletedLines();
             linesCleared += cleared;
-            score += CountCells(piece.Shape) * 10 + cleared * config.BoardSize * 10 + affected * 5;
+            comboStreak = cleared > 0 ? comboStreak + 1 : 0;
+            int comboBonus = cleared > 0 ? (comboStreak - 1) * 50 : 0;
+            score += CountCells(piece.Shape) * 10 + cleared * config.BoardSize * 10 + affected * 5 + comboBonus;
             if (score > bestScore) { bestScore = score; PlayerPrefs.SetInt("blockverse_best_score", bestScore); }
-            if (cleared > 0) coins += cleared * 2;
+            if (cleared > 0) coins += cleared * 2 + Mathf.Max(0, comboStreak - 1);
             PlayerPrefs.SetInt("blockverse_coins", coins);
             PlayerPrefs.Save();
             RefreshBoardVisuals();
@@ -273,7 +275,7 @@ namespace Blockverse
             if (IsObjectiveComplete()) CompleteLevel();
             else if (config.MoveLimit > 0 && movesUsed >= config.MoveLimit) FailLevel("MOVE LIMIT REACHED");
             else if (hintLabel != null)
-                hintLabel.text = (cleared > 0 ? $"NICE! {cleared} LINE(S) CLEARED" : "GOOD MOVE!") +
+                hintLabel.text = (cleared > 0 ? $"NICE! {cleared} LINE(S) CLEARED" + (comboStreak > 1 ? $" • {comboStreak}× COMBO +{comboBonus}" : "") : "GOOD MOVE!") +
                     (piece.Special == SpecialPieceType.None ? "" : $" — {piece.Special.ToString().ToUpperInvariant()}");
             return true;
         }
@@ -501,7 +503,7 @@ namespace Blockverse
         private void RefreshLabels()
         {
             if (scoreLabel != null) scoreLabel.text = $"SCORE  {score:N0}";
-            if (goalLabel != null) goalLabel.text = $"LEVEL {level} • {ObjectiveText()} • BEST {bestScore:N0} • COINS {coins}";
+            if (goalLabel != null) goalLabel.text = $"LEVEL {level} • {ObjectiveText()} • BEST {bestScore:N0} • COINS {coins} • COMBO {comboStreak}×";
         }
     }
 }
