@@ -31,7 +31,7 @@ static func lightning_connected_cells(board: BlockverseBoard, origin: Vector2i) 
 		var point: Vector2i = queue.pop_front()
 		result.append(point)
 		for direction in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
-			var next_point := point + direction
+			var next_point: Vector2i = point + direction
 			if not visited.has(next_point) and board.get_cell(next_point.x, next_point.y) != BlockverseBoard.EMPTY:
 				visited[next_point] = true
 				queue.append(next_point)
