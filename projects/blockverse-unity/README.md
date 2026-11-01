@@ -25,6 +25,9 @@
 - Daily login reward with a seven-day streak cycle, claimed once per local calendar day.
 - Persistent vibration preference and haptic feedback on successful placements.
 - Coin shop with four block-and-board color themes, permanent unlocks and equip selection.
+- Daily missions: place 20 blocks, clear 5 lines and earn 50 gameplay coins; claim a 100-coin reward once per day.
+- Lifetime achievements for first block, 100 lines, 500 blocks, 10 level wins and a 5,000-point best score, with one-time coin rewards.
+- Mission progress and achievement unlocks are stored locally with PlayerPrefs.
 - Deterministic obstacles and procedural level configuration.
 - Editor setup menu creates the starter scene and configures Android identity/build scene.
 
