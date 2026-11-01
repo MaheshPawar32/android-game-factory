@@ -22,6 +22,10 @@ namespace Blockverse
             trayParent = tray;
             canvas = GetComponentInParent<Canvas>();
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            var hitArea = GetComponent<Image>();
+            if (hitArea == null) hitArea = gameObject.AddComponent<Image>();
+            hitArea.color = new Color(1f, 1f, 1f, 0.01f);
+            hitArea.raycastTarget = true;
             BuildVisual();
         }
 
