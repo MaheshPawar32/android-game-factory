@@ -238,6 +238,7 @@ func _new_game() -> void:
 		level_move_limit = int(level_config.move_limit)
 		level_moves_left = level_move_limit
 		level_target_score = int(level_config.target_score)
+		_apply_level_obstacles()
 	else:
 		level_objective = 3
 		level_objective_type = "lines"
@@ -477,14 +478,35 @@ func _try_place_selected(origin: Vector2i) -> void:
 		else:
 			_show_game_over()
 
+func _apply_level_obstacles() -> void:
+	if level_config.is_empty():
+		return
+	var count := int(level_config.get("obstacle_count", 0))
+	if count <= 0:
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(level_config.seed) ^ 0x5F3759DF
+	var pattern := str(level_config.get("obstacle_pattern", "stone"))
+	var placed := 0
+	var attempts := 0
+	while placed < count and attempts < count * 12:
+		attempts += 1
+		var x := rng.randi_range(0, board.size - 1)
+		var y := rng.randi_range(0, board.size - 1)
+		var obstacle := BoardModel.STONE
+		if pattern == "ice" or (pattern == "mixed" and placed % 2 == 1):
+			obstacle = BoardModel.ICE
+		if board.set_obstacle(x, y, obstacle):
+			placed += 1
+
 func _level_goal_text() -> String:
 	if level_objective_type == "score":
 		return "SCORE TRIAL • REACH %d POINTS%s" % [level_target_score, " • %d MOVES" % level_moves_left if level_move_limit > 0 else ""]
 	if level_objective_type == "boss":
-		return "BOSS LEVEL • CLEAR %d LINES • %d MOVES" % [level_objective, level_moves_left]
+		return "BOSS LEVEL • CLEAR %d LINES • %d MOVES • %d HAZARDS" % [level_objective, level_moves_left, board.obstacle_count()]
 	if level_move_limit > 0:
-		return "CLEAR %d LINES • %d MOVES LEFT" % [level_objective, level_moves_left]
-	return "CLEAR %d LINES TO WIN" % level_objective
+		return "CLEAR %d LINES • %d MOVES • %d HAZARDS" % [level_objective, level_moves_left, board.obstacle_count()]
+	return "CLEAR %d LINES • %d HAZARDS" % [level_objective, board.obstacle_count()]
 
 func _level_goal_complete() -> bool:
 	if level_objective_type == "score":
