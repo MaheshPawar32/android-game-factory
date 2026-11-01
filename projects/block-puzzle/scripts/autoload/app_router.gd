@@ -19,6 +19,9 @@ func start_classic() -> void:
 	start_mode("classic")
 
 func start_mode(mode_id: String) -> void:
+	if mode_id == "adventure":
+		open_adventure_map()
+		return
 	SaveData.set_value("active_mode", mode_id)
 	if mode_id == "daily":
 		var date := Time.get_date_dict_from_system()
