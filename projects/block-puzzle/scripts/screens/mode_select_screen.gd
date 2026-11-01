@@ -37,12 +37,12 @@ func _ready() -> void:
 	header.add_child(spacer)
 
 	var modes := [
-		["🏆  CLASSIC", "Endless high-score challenge", true],
-		["🗺  ADVENTURE", "Progress through five worlds", false],
-		["📅  DAILY CHALLENGE", "A fresh puzzle every day", false],
-		["🪷  ZEN", "Relax and play freely", false],
-		["🔥  COMBO RUSH", "Build consecutive line clears", false],
-		["⏱  TIME ATTACK", "Score before time runs out", false]
+		["🏆  CLASSIC", "Endless high-score challenge", "classic"],
+		["🗺  ADVENTURE", "Progress through themed worlds", "adventure"],
+		["📅  DAILY CHALLENGE", "Same seeded puzzle for everyone today", "daily"],
+		["🪷  ZEN", "Relax and play without game over", "zen"],
+		["🔥  COMBO RUSH", "Reach a 5× combo streak", "combo_rush"],
+		["⏱  TIME ATTACK", "Score as much as possible in 90 seconds", "time_attack"]
 	]
 	for mode in modes:
 		var button := Button.new()
@@ -60,16 +60,7 @@ func _ready() -> void:
 		button.add_theme_stylebox_override("normal", style)
 		button.add_theme_stylebox_override("hover", style)
 		button.add_theme_stylebox_override("pressed", style)
-		if mode[2]:
-			button.pressed.connect(func(): AppRouter.start_classic())
-		else:
-			var mode_name: String = mode[0]
-			button.pressed.connect(func(): _show_coming_soon(mode_name))
+		var mode_id: String = mode[2]
+		button.pressed.connect(func(): AppRouter.start_mode(mode_id))
 		layout.add_child(button)
 
-func _show_coming_soon(mode_name: String) -> void:
-	var dialog := AcceptDialog.new()
-	dialog.title = mode_name
-	dialog.dialog_text = "This mode will be implemented in a later BLOCKVERSE milestone."
-	add_child(dialog)
-	dialog.popup_centered()
