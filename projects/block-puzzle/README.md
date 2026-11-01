@@ -246,3 +246,14 @@ Source committed and retrieved for inspection. The procedural level generator is
 - Added engine tests for move-limited, score-trial, and boss-stage configuration.
 
 Validation: source committed and inspected. Godot runtime parsing, automated tests, and Android export are not yet verified.
+
+
+## Batch 13 — Obstacle boards
+
+- Added two generated board hazards: stone blocks and ice blocks. Both occupy cells and prevent normal piece placement.
+- Obstacle patterns are deterministic per level and cycle between stone, ice, and mixed layouts. Hazard count increases with campaign progress.
+- Board rendering gives stone and ice distinct colors and simple glyph-like line artwork.
+- Obstacles count as occupied cells, can contribute to completing a row or column, and are removed when that line clears. Existing special-block effects can also clear them where their area overlaps.
+- Added engine tests for obstacle placement, blocking, counting, line clearing, and board snapshot compatibility.
+
+Validation: source committed and inspected. Godot runtime tests and Android export are still not verified.
