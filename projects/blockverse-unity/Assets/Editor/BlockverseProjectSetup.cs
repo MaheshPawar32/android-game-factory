@@ -27,20 +27,36 @@ public static class BlockverseProjectSetup
         title.alignment = TextAnchor.MiddleCenter;
         var score = CreateText(canvasObject.transform, "SCORE  0", 42, new Vector2(0, 690), new Vector2(900, 80));
         var goal = CreateText(canvasObject.transform, "LEVEL 1", 30, new Vector2(0, 610), new Vector2(900, 70));
+        var hint = CreateText(canvasObject.transform, "DRAG A BLOCK ONTO THE BOARD", 26, new Vector2(0, -315), new Vector2(900, 70));
 
         var board = new GameObject("Board", typeof(RectTransform), typeof(GridLayoutGroup));
         board.transform.SetParent(canvasObject.transform, false);
         var rect = board.GetComponent<RectTransform>();
         rect.sizeDelta = new Vector2(620, 620);
-        rect.anchoredPosition = new Vector2(0, 100);
+        rect.anchoredPosition = new Vector2(0, 70);
+
+        var tray = new GameObject("PieceTray", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        tray.transform.SetParent(canvasObject.transform, false);
+        var trayRect = tray.GetComponent<RectTransform>();
+        trayRect.sizeDelta = new Vector2(760, 180);
+        trayRect.anchoredPosition = new Vector2(0, -470);
+        var trayLayout = tray.GetComponent<HorizontalLayoutGroup>();
+        trayLayout.childAlignment = TextAnchor.MiddleCenter;
+        trayLayout.spacing = 12;
+        trayLayout.childControlWidth = false;
+        trayLayout.childControlHeight = false;
+        trayLayout.childForceExpandWidth = false;
+        trayLayout.childForceExpandHeight = false;
 
         var controller = root.AddComponent<GameController>();
         var so = new SerializedObject(controller);
         so.FindProperty("boardRoot").objectReferenceValue = rect;
+        so.FindProperty("trayRoot").objectReferenceValue = trayRect;
         so.FindProperty("scoreLabel").objectReferenceValue = score;
         so.FindProperty("goalLabel").objectReferenceValue = goal;
+        so.FindProperty("hintLabel").objectReferenceValue = hint;
 
-        var restart = CreateButton(canvasObject.transform, "RESTART", new Vector2(0, -650));
+        var restart = CreateButton(canvasObject.transform, "RESTART", new Vector2(0, -790));
         so.FindProperty("restartButton").objectReferenceValue = restart;
         so.ApplyModifiedPropertiesWithoutUndo();
 
