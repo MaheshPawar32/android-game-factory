@@ -6,6 +6,8 @@ const MIN_SIZE := 5
 const MAX_SIZE := 10
 const DEFAULT_SIZE := 5
 const EMPTY := -1
+const STONE := 90
+const ICE := 91
 
 var size: int = DEFAULT_SIZE
 var cells: Array = []
@@ -25,6 +27,22 @@ func reset() -> void:
 		for x in range(size):
 			row.append(EMPTY)
 		cells.append(row)
+
+func set_obstacle(x: int, y: int, obstacle_type: int) -> bool:
+	if not is_inside(x, y) or obstacle_type not in [STONE, ICE] or cells[y][x] != EMPTY:
+		return false
+	cells[y][x] = obstacle_type
+	return true
+
+func obstacle_count(obstacle_type: int = -1) -> int:
+	var total := 0
+	for y in range(size):
+		for x in range(size):
+			var value := int(cells[y][x])
+			if value == STONE or value == ICE:
+				if obstacle_type == -1 or value == obstacle_type:
+					total += 1
+	return total
 
 func is_inside(x: int, y: int) -> bool:
 	return x >= 0 and x < size and y >= 0 and y < size
