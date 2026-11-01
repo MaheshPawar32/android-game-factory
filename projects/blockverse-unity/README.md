@@ -24,6 +24,7 @@
 - 20-level selection grid with locked/unlocked progression.
 - Daily login reward with a seven-day streak cycle, claimed once per local calendar day.
 - Persistent vibration preference and haptic feedback on successful placements.
+- Coin shop with four block-and-board color themes, permanent unlocks and equip selection.
 - Deterministic obstacles and procedural level configuration.
 - Editor setup menu creates the starter scene and configures Android identity/build scene.
 
@@ -34,7 +35,7 @@
 4. Open `Assets/Scenes/Game.unity` and press Play.
 5. Drag pieces onto the board. Special colors: red = Bomb, purple = Rainbow, yellow = Lightning.
 
-This remains an early prototype. The UI is generated at runtime using Unity UGUI; polished art, transitions, audio, missions, shop, and release-ready balancing remain future work.
+This remains an early prototype. The UI is generated at runtime using Unity UGUI; polished art, transitions, background music, missions, and release-ready balancing remain future work.
 
 ## Android build
 Use the **BLOCKVERSE Unity Android** workflow after configuring Unity licensing secrets in GitHub. Validate compilation, gameplay, and touch interactions on a physical Android device before release.
