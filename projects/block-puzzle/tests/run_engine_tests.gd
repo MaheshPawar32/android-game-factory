@@ -13,6 +13,7 @@ var failed := 0
 
 func _initialize() -> void:
 	_test_empty_board()
+	_test_custom_board_sizes()
 	_test_placement_and_bounds()
 	_test_overlap_rejected()
 	_test_row_clear()
@@ -58,7 +59,7 @@ func _test_overlap_rejected() -> void:
 
 func _test_row_clear() -> void:
 	var board = Board.new()
-	for x in range(Board.SIZE):
+	for x in range(board.size):
 		board.cells[4][x] = 0
 	var result: Dictionary = board.clear_completed_lines()
 	_check(result.rows == [4], "full row detected")
@@ -66,7 +67,7 @@ func _test_row_clear() -> void:
 
 func _test_column_clear() -> void:
 	var board = Board.new()
-	for y in range(Board.SIZE):
+	for y in range(board.size):
 		board.cells[y][6] = 0
 	var result: Dictionary = board.clear_completed_lines()
 	_check(result.columns == [6], "full column detected")
@@ -99,9 +100,9 @@ func _test_scoring() -> void:
 	_check(Scoring.line_points(0, 1) == 0, "no line clear awards no line bonus")
 
 func _test_special_effect_bounds() -> void:
-	var cells: Array[Vector2i] = Specials.bomb_cells(Vector2i.ZERO)
+	var cells: Array[Vector2i] = Specials.bomb_cells(board, Vector2i.ZERO)
 	_check(cells.size() == 4, "corner bomb clips its 3x3 area to board bounds")
-	var center_cells: Array[Vector2i] = Specials.bomb_cells(Vector2i(5, 5))
+	var center_cells: Array[Vector2i] = Specials.bomb_cells(board, Vector2i(5, 5))
 	_check(center_cells.size() == 9, "center bomb returns a 3x3 area")
 
 func _test_rainbow_line() -> void:
@@ -157,3 +158,19 @@ func _test_special_generator_distribution() -> void:
 		seen[str(piece.special_type)] = true
 	_check(seen.has("normal"), "generator includes normal pieces")
 	_check(seen.has("bomb") and seen.has("rainbow") and seen.has("lightning") and seen.has("treasure"), "seeded generator can produce every special type")
+
+func _test_custom_board_sizes() -> void:
+	var default_board = Board.new()
+	_check(default_board.size == 5, "default board size is 5x5")
+	_check(default_board.cells.size() == 5 and default_board.cells[0].size() == 5, "default board allocates 5x5 cells")
+	var ten_board = Board.new(10)
+	_check(ten_board.size == 10 and ten_board.cells.size() == 10, "maximum board size is 10x10")
+	var clamped_small = Board.new(2)
+	_check(clamped_small.size == 5, "board size clamps below minimum to 5")
+	var clamped_large = Board.new(20)
+	_check(clamped_large.size == 10, "board size clamps above maximum to 10")
+	ten_board.set_size(7)
+	_check(ten_board.size == 7 and ten_board.get_cell(6, 6) == Board.EMPTY, "changing board size resets to selected dimension")
+	var snapshot: Dictionary = ten_board.to_dictionary()
+	var restored = Board.new()
+	_check(restored.load_dictionary(snapshot) and restored.size == 7, "board snapshot restores custom size")
