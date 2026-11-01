@@ -16,6 +16,7 @@ var combo := 0
 var best_score := 0
 var board_size_button: Button
 var game_over := false
+var paused := false
 
 var board_view: Control
 var tray: HBoxContainer
@@ -72,6 +73,10 @@ func _build_ui() -> void:
 	restart.custom_minimum_size = Vector2(54, 54)
 	restart.pressed.connect(_new_game)
 	header.add_child(restart)
+	var pause := _button("Ⅱ", Color("#293657"))
+	pause.custom_minimum_size = Vector2(54, 54)
+	pause.pressed.connect(_show_pause_screen)
+	header.add_child(pause)
 
 	var stats := HBoxContainer.new()
 	stats.add_theme_constant_override("separation", 10)
@@ -187,6 +192,7 @@ func _new_game() -> void:
 	selected_piece = -1
 	drag_active = false
 	game_over = false
+	paused = false
 	pieces = generator.next_tray(3)
 	_refresh_all()
 	_set_status("Drag a shape onto the board.")
@@ -398,11 +404,27 @@ func _has_any_move() -> bool:
 			return true
 	return false
 
+func _show_pause_screen() -> void:
+	if paused or game_over:
+		return
+	paused = true
+	_finish_drag()
+	var dialog := ConfirmationDialog.new()
+	dialog.title = "GAME PAUSED"
+	dialog.dialog_text = "Take a break. Your current score is %d." % score
+	dialog.ok_button_text = "RESUME"
+	dialog.confirmed.connect(func(): paused = false)
+	dialog.canceled.connect(func(): paused = false)
+	add_child(dialog)
+	dialog.popup_centered()
+
 func _show_game_over() -> void:
+	paused = true
+	SaveData.set_value("games_played", int(SaveData.get_value("games_played", 0)) + 1)
 	var dialog := AcceptDialog.new()
-	dialog.title = "GAME OVER"
-	dialog.dialog_text = "Your score: %s\nBest score: %s" % [score, best_score]
-	dialog.confirmed.connect(_new_game)
+	dialog.title = "ROUND COMPLETE"
+	dialog.dialog_text = "FINAL SCORE  %s\nBEST SCORE  %s\n\nNo moves left. Try another round!" % [score, best_score]
+	dialog.confirmed.connect(func(): paused = false; _new_game())
 	dialog.ok_button_text = "PLAY AGAIN"
 	add_child(dialog)
 	dialog.popup_centered()
