@@ -52,6 +52,8 @@ jobs:
           JAVA_BIN="$(readlink -f "$(command -v javac)")"
           JAVA_HOME="$(dirname "$(dirname "$JAVA_BIN")")"
           ANDROID_SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/opt/android-sdk}}"
+          echo "JAVA_HOME=$JAVA_HOME ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          ls -la "$ANDROID_SDK_ROOT"
           mkdir -p "$HOME/.config/godot"
           cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
           [gd_resource type="EditorSettings" format=3]
@@ -72,7 +74,7 @@ jobs:
           PROJECT_DIR: ${{ inputs.project_path || 'projects/block-puzzle' }}
         run: |
           set -euo pipefail
-          godot --headless --path "$PROJECT_DIR" --export-debug "Android" "$PROJECT_DIR/build/BLOCKVERSE.apk"
+          godot --headless --verbose --path "$PROJECT_DIR" --export-debug "Android" "$PROJECT_DIR/build/BLOCKVERSE.apk"
           test -s "$PROJECT_DIR/build/BLOCKVERSE.apk"
 
       - name: Upload APK
