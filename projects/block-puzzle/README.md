@@ -182,3 +182,16 @@ GitHub Actions headless engine tests and Android export are being run against th
 - Integrate and test AdMob with consent and Android app IDs before enabling ads.
 - Add music, notification scheduling, more complete screen coverage, and production art.
 - Run full Android device testing (touch layouts, lifecycle, sound, vibration, save migration, performance) and prepare a signed release build.
+
+## Batch 8 — Cosmetic board shop
+
+- Added five offline board palettes: Classic Neon (free), Aurora Glow, Sunset Rush, Deep Ocean, and Forest Calm.
+- Added a board-skin shop with color swatches, ownership/equipped states, and coin prices.
+- Purchases deduct coins once, persist ownership locally, and add a wallet history entry.
+- Selected palette is applied to board cells immediately and persists across sessions.
+- Home screen Shop shortcut now opens the cosmetic shop.
+- No paid currency, network account, or external service is used.
+
+### Batch 8 validation
+
+Godot headless tests and Android APK export run automatically on pushes. The latest runs should be checked in GitHub Actions before treating this batch as validated.
