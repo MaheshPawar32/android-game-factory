@@ -359,6 +359,7 @@ func _try_place_selected(origin: Vector2i) -> void:
 	Feedback.play("place")
 	Feedback.vibrate(22)
 	score += ScoringRules.placement_points(shape.size())
+	SaveData.record_placement(shape.size())
 	pieces[selected_piece] = {}
 	selected_piece = -1
 
@@ -369,7 +370,7 @@ func _try_place_selected(origin: Vector2i) -> void:
 		var effect_color := _special_color(special_type)
 		board_view.flash_special_cells(special_result.cells, effect_color)
 		if int(special_result.coins) > 0:
-			SaveData.add_coins(int(special_result.coins))
+			SaveData.add_coins(int(special_result.coins), "Treasure block")
 			Feedback.play("reward")
 			Feedback.vibrate(55)
 			_show_reward_popup(int(special_result.coins))
@@ -382,6 +383,8 @@ func _try_place_selected(origin: Vector2i) -> void:
 	var cleared: int = int(result.lines_cleared)
 	level_lines += cleared
 	if cleared > 0:
+		SaveData.record_lines_cleared(cleared)
+		SaveData.record_combo(combo + 1)
 		combo += 1
 		score += ScoringRules.line_points(cleared, combo)
 		board_view.flash_lines(result.cleared_rows, result.cleared_columns)
@@ -443,7 +446,7 @@ func _show_pause_screen() -> void:
 
 func _show_game_over() -> void:
 	paused = true
-	SaveData.set_value("games_played", int(SaveData.get_value("games_played", 0)) + 1)
+	SaveData.record_game_completed(score)
 	var dialog := AcceptDialog.new()
 	dialog.title = "ROUND COMPLETE"
 	dialog.dialog_text = "FINAL SCORE  %s\nBEST SCORE  %s\n\nNo moves left. Try another round!" % [score, best_score]
@@ -473,10 +476,11 @@ func _show_victory_screen() -> void:
 	paused = true
 	Feedback.play("reward")
 	Feedback.vibrate(100)
+	SaveData.record_game_completed(score)
 	var current := int(SaveData.get_value("current_level", 1))
 	SaveData.set_value("unlocked_level", maxi(int(SaveData.get_value("unlocked_level", 1)), current + 1))
 	var reward := 50 + current * 5
-	SaveData.add_coins(reward)
+	SaveData.add_coins(reward, "Adventure level %d" % current)
 	var dialog := AcceptDialog.new()
 	dialog.title = "LEVEL COMPLETE!"
 	dialog.dialog_text = "Objective completed!\nLines cleared: %d / %d\n\nReward: %d coins" % [level_lines, level_objective, reward]
