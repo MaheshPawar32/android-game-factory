@@ -105,10 +105,12 @@ namespace Blockverse
             Canvas canvas = GetCanvas(); if (canvas == null) return;
             if (menuOverlay != null) Destroy(menuOverlay);
             menuOverlay = CreateMenuOverlay(canvas, "BLOCKVERSE", "BLOCK PUZZLE ADVENTURE");
-            CreateOverlayButton(menuOverlay.transform, "PLAY", new Vector2(0, 95), () => { Destroy(menuOverlay); menuOverlay = null; });
-            CreateOverlayButton(menuOverlay.transform, "LEVEL SELECT", new Vector2(0, -15), ShowLevelSelect);
-            CreateOverlayButton(menuOverlay.transform, "DAILY REWARD", new Vector2(0, -125), ClaimDailyReward);
-            CreateOverlayButton(menuOverlay.transform, "SHOP", new Vector2(0, -235), ShowShop);
+            CreateOverlayButton(menuOverlay.transform, "PLAY", new Vector2(0, 135), () => { Destroy(menuOverlay); menuOverlay = null; });
+            CreateOverlayButton(menuOverlay.transform, "LEVEL SELECT", new Vector2(0, 55), ShowLevelSelect);
+            CreateOverlayButton(menuOverlay.transform, "MISSIONS", new Vector2(0, -25), ShowMissions);
+            CreateOverlayButton(menuOverlay.transform, "ACHIEVEMENTS", new Vector2(0, -105), ShowAchievements);
+            CreateOverlayButton(menuOverlay.transform, "DAILY REWARD", new Vector2(0, -185), ClaimDailyReward);
+            CreateOverlayButton(menuOverlay.transform, "SHOP", new Vector2(0, -265), ShowShop);
             CreateOverlayButton(menuOverlay.transform, "SETTINGS", new Vector2(0, -345), ShowSettings);
         }
 
@@ -143,6 +145,89 @@ namespace Blockverse
                 CreateOverlayText(go.transform, open ? i.ToString() : "LOCKED", 23, Vector2.zero, new Vector2(140, 100), Color.white);
             }
             CreateOverlayButton(menuOverlay.transform, "BACK", new Vector2(0, -300), ShowMainMenu);
+        }
+
+        private void EnsureMissionDay()
+        {
+            string today = System.DateTime.Now.ToString("yyyy-MM-dd");
+            if (PlayerPrefs.GetString("blockverse_mission_date", "") == today) return;
+            PlayerPrefs.SetString("blockverse_mission_date", today);
+            PlayerPrefs.SetInt("blockverse_mission_blocks", 0);
+            PlayerPrefs.SetInt("blockverse_mission_lines", 0);
+            PlayerPrefs.SetInt("blockverse_mission_coins", 0);
+            PlayerPrefs.SetInt("blockverse_mission_claimed", 0);
+            PlayerPrefs.Save();
+        }
+
+        private void TrackMissionProgress(int blocks, int clearedLines, int earnedCoins)
+        {
+            EnsureMissionDay();
+            PlayerPrefs.SetInt("blockverse_mission_blocks", PlayerPrefs.GetInt("blockverse_mission_blocks", 0) + blocks);
+            PlayerPrefs.SetInt("blockverse_mission_lines", PlayerPrefs.GetInt("blockverse_mission_lines", 0) + clearedLines);
+            PlayerPrefs.SetInt("blockverse_mission_coins", PlayerPrefs.GetInt("blockverse_mission_coins", 0) + earnedCoins);
+            PlayerPrefs.SetInt("blockverse_total_blocks", PlayerPrefs.GetInt("blockverse_total_blocks", 0) + blocks);
+            PlayerPrefs.SetInt("blockverse_total_lines", PlayerPrefs.GetInt("blockverse_total_lines", 0) + clearedLines);
+            PlayerPrefs.Save();
+            CheckAchievements();
+        }
+
+        private void CheckAchievements()
+        {
+            UnlockAchievement("first_block", PlayerPrefs.GetInt("blockverse_total_blocks", 0) >= 1, 20);
+            UnlockAchievement("line_master", PlayerPrefs.GetInt("blockverse_total_lines", 0) >= 100, 100);
+            UnlockAchievement("block_collector", PlayerPrefs.GetInt("blockverse_total_blocks", 0) >= 500, 100);
+            UnlockAchievement("level_runner", PlayerPrefs.GetInt("blockverse_levels_won", 0) >= 10, 150);
+            UnlockAchievement("high_scorer", bestScore >= 5000, 100);
+        }
+
+        private void UnlockAchievement(string id, bool condition, int reward)
+        {
+            string key = "blockverse_achievement_" + id;
+            if (!condition || PlayerPrefs.GetInt(key, 0) == 1) return;
+            PlayerPrefs.SetInt(key, 1);
+            coins += reward;
+            PlayerPrefs.SetInt("blockverse_coins", coins);
+            PlayerPrefs.Save();
+        }
+
+        private void ShowMissions()
+        {
+            Canvas canvas = GetCanvas(); if (canvas == null) return;
+            EnsureMissionDay();
+            if (menuOverlay != null) Destroy(menuOverlay);
+            menuOverlay = CreateMenuOverlay(canvas, "DAILY MISSIONS", $"COMPLETE TASKS TO EARN COINS  •  BALANCE {coins}");
+            int blocks = PlayerPrefs.GetInt("blockverse_mission_blocks", 0);
+            int lines = PlayerPrefs.GetInt("blockverse_mission_lines", 0);
+            int earned = PlayerPrefs.GetInt("blockverse_mission_coins", 0);
+            CreateOverlayText(menuOverlay.transform, $"PLACE BLOCKS  {Mathf.Min(blocks, 20)}/20\nCLEAR LINES  {Mathf.Min(lines, 5)}/5\nEARN COINS  {Mathf.Min(earned, 50)}/50", 30, new Vector2(0, 35), new Vector2(760, 250), Color.white);
+            bool complete = blocks >= 20 && lines >= 5 && earned >= 50;
+            bool claimed = PlayerPrefs.GetInt("blockverse_mission_claimed", 0) == 1;
+            string rewardText = claimed ? "REWARD CLAIMED" : complete ? "CLAIM 100 COINS" : "KEEP PLAYING";
+            CreateOverlayButton(menuOverlay.transform, rewardText, new Vector2(0, -150), () =>
+            {
+                if (!complete || claimed) { ShowMissions(); return; }
+                PlayerPrefs.SetInt("blockverse_mission_claimed", 1);
+                coins += 100; PlayerPrefs.SetInt("blockverse_coins", coins); PlayerPrefs.Save();
+                RefreshLabels(); ShowMessage("MISSION REWARD!", "+100 COINS");
+            });
+            CreateOverlayButton(menuOverlay.transform, "BACK", new Vector2(0, -265), ShowMainMenu);
+        }
+
+        private void ShowAchievements()
+        {
+            Canvas canvas = GetCanvas(); if (canvas == null) return;
+            if (menuOverlay != null) Destroy(menuOverlay);
+            menuOverlay = CreateMenuOverlay(canvas, "ACHIEVEMENTS", "LIFETIME MILESTONES");
+            string[] names = { "FIRST BLOCK", "LINE MASTER — 100 LINES", "BLOCK COLLECTOR — 500 BLOCKS", "LEVEL RUNNER — 10 WINS", "HIGH SCORER — 5,000 POINTS" };
+            string[] ids = { "first_block", "line_master", "block_collector", "level_runner", "high_scorer" };
+            string[] rewards = { "+20", "+100", "+100", "+150", "+100" };
+            for (int i = 0; i < names.Length; i++)
+            {
+                bool unlocked = PlayerPrefs.GetInt("blockverse_achievement_" + ids[i], 0) == 1;
+                CreateOverlayText(menuOverlay.transform, (unlocked ? "✓  " : "🔒  ") + names[i] + "   " + (unlocked ? "UNLOCKED" : rewards[i] + " COINS"), 21,
+                    new Vector2(0, 130 - i * 65), new Vector2(850, 58), unlocked ? new Color(.45f, .9f, .65f) : Color.white);
+            }
+            CreateOverlayButton(menuOverlay.transform, "BACK", new Vector2(0, -260), ShowMainMenu);
         }
 
         private void ClaimDailyReward()
