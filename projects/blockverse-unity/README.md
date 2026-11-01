@@ -6,13 +6,16 @@
 - Package: `com.dev.blockverse`
 - Orientation: Portrait
 
-## Implemented foundation
-- Grid board with touch drag-and-drop placement and three-piece tray.
+## Implemented gameplay
+- 8×8 starting grid with touch drag-and-drop and three-piece tray.
 - Special pieces: Bomb damages a 3×3 area, Rainbow damages a row, and Lightning damages a column.
-- Special pieces appear occasionally and use distinct colors in the tray.
-- Stone breaks in one hit; ice requires two hits from line clears or special effects.
+- Stone breaks in one hit; ice requires two hits.
 - Simultaneous row/column clearing and score calculation.
 - Best score and coins persist locally with PlayerPrefs.
+- Level objectives: clear a line target, reach a score target, clear lines within a move limit, and boss levels that require clearing all obstacles.
+- Successful levels unlock the next level, award bonus coins, and save a three-star completion record.
+- Failure overlay appears when the move limit is reached or no remaining piece can be placed.
+- Runtime win/fail overlay provides Next Level or Retry actions.
 - Deterministic obstacles and procedural level configuration.
 - Editor setup menu creates the starter scene and configures Android identity/build scene.
 
@@ -23,7 +26,7 @@
 4. Open `Assets/Scenes/Game.unity` and press Play.
 5. Drag pieces onto the board. Special colors: red = Bomb, purple = Rainbow, yellow = Lightning.
 
-This is still an early playable prototype. Objective completion, win/game-over screens, polished animations/audio, missions, shop, and release-ready UI remain future work.
+This remains an early prototype. The UI is generated at runtime using Unity UGUI; polished art, transitions, audio, missions, shop, and release-ready balancing remain future work.
 
 ## Android build
-Use the **BLOCKVERSE Unity Android** workflow after configuring Unity licensing secrets in GitHub. Validate on a physical Android device before release.
+Use the **BLOCKVERSE Unity Android** workflow after configuring Unity licensing secrets in GitHub. Validate compilation, gameplay, and touch interactions on a physical Android device before release.
