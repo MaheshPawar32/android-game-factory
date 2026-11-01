@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using Blockverse;
 
 public static class BlockverseProjectSetup
@@ -12,6 +13,8 @@ public static class BlockverseProjectSetup
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var root = new GameObject("BLOCKVERSE");
+        var eventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+        eventSystem.transform.SetParent(root.transform, false);
         var canvasObject = new GameObject("Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         canvasObject.transform.SetParent(root.transform, false);
         var canvas = canvasObject.GetComponent<Canvas>();
