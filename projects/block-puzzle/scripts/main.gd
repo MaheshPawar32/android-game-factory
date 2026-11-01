@@ -19,6 +19,10 @@ var game_over := false
 var paused := false
 var level_lines := 0
 var level_objective := 3
+var active_mode := "classic"
+var mode_time_left := 90.0
+var mode_misses := 0
+var mode_timer_label: Label
 
 var board_view: Control
 var tray: HBoxContainer
@@ -29,15 +33,27 @@ var status_label: Label
 var tray_buttons: Array[Button] = []
 
 func _ready() -> void:
+	active_mode = str(SaveData.get_value("active_mode", "classic"))
 	var saved_size := clampi(int(SaveData.get_value("board_size", 5)), 5, 10)
 	board = BoardModel.new(saved_size)
 	generator = PieceGenerator.new()
-	generator.randomize_seed()
+	if active_mode == "daily":
+		generator.set_seed(int(SaveData.get_value("daily_seed", 1)))
+	else:
+		generator.randomize_seed()
 	best_score = int(SaveData.get_value("best_score", 0))
 	_build_ui()
 	_new_game()
 	if not bool(SaveData.get_value("tutorial_seen", false)):
 		_show_tutorial()
+
+func _process(delta: float) -> void:
+	if active_mode == "time_attack" and not paused and not game_over:
+		mode_time_left = maxf(0.0, mode_time_left - delta)
+		if is_instance_valid(mode_timer_label):
+			mode_timer_label.text = "TIME  %02d" % ceili(mode_time_left)
+		if mode_time_left <= 0.0:
+			_finish_time_attack()
 
 func _build_ui() -> void:
 	var background := ColorRect.new()
@@ -62,7 +78,10 @@ func _build_ui() -> void:
 	var title_box := VBoxContainer.new()
 	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title_box)
-	title_box.add_child(_label("BLOCKVERSE  •  CLASSIC", 13, Color("#A7B0CC")))
+	title_box.add_child(_label("BLOCKVERSE  •  " + active_mode.to_upper().replace("_", " "), 13, Color("#A7B0CC")))
+	if active_mode == "time_attack":
+		mode_timer_label = _label("TIME  90", 16, Color("#FFB547"), true)
+		title_box.add_child(mode_timer_label)
 	title_box.add_child(_label("PLACE. CLEAR. COMBO.", 24, Color("#F6F5FF"), true))
 	var back := _button("⌂", Color("#293657"))
 	back.custom_minimum_size = Vector2(54, 54)
@@ -198,6 +217,8 @@ func _new_game() -> void:
 	game_over = false
 	paused = false
 	level_lines = 0
+	mode_time_left = 90.0
+	mode_misses = 0
 	level_objective = 3 + int(SaveData.get_value("current_level", 1)) / 4
 	pieces = generator.next_tray(3)
 	_refresh_all()
@@ -393,7 +414,18 @@ func _try_place_selected(origin: Vector2i) -> void:
 		_set_status("LINE CLEAR! %d lines  •  COMBO x%d" % [cleared, combo])
 	elif special_type == "normal":
 		combo = 0
+		if active_mode == "combo_rush":
+			mode_misses += 1
+			if mode_misses >= 3:
+				_finish_mode("COMBO RUSH OVER", "Three turns without a line clear. Best streak: %d×" % combo)
+				return
 
+	if active_mode == "combo_rush" and combo >= 5:
+		_finish_mode("COMBO RUSH CLEARED!", "You reached a 5× line-clear streak.")
+		return
+	if active_mode == "daily" and score >= 600:
+		_finish_mode("DAILY CHALLENGE COMPLETE!", "You reached today’s 600-point target.")
+		return
 	if bool(SaveData.get_value("adventure_active", false)) and level_lines >= level_objective:
 		_show_victory_screen()
 		return
@@ -404,9 +436,15 @@ func _try_place_selected(origin: Vector2i) -> void:
 	if _all_pieces_used():
 		pieces = generator.next_tray(3)
 	_refresh_all()
-	if not _has_any_move():
+	if not _has_any_move() and active_mode == "zen":
+		pieces = generator.next_tray(3)
+		_refresh_all()
+	elif not _has_any_move():
 		game_over = true
-		_show_game_over()
+		if active_mode == "daily":
+			_finish_mode("DAILY CHALLENGE ENDED", "Score: %d / 600" % score)
+		else:
+			_show_game_over()
 
 func _finish_drag() -> void:
 	drag_active = false
@@ -447,11 +485,36 @@ func _show_pause_screen() -> void:
 func _show_game_over() -> void:
 	paused = true
 	SaveData.record_game_completed(score)
+	if active_mode != "zen":
+		SaveData.record_mode_score(active_mode, score)
 	var dialog := AcceptDialog.new()
 	dialog.title = "ROUND COMPLETE"
 	dialog.dialog_text = "FINAL SCORE  %s\nBEST SCORE  %s\n\nNo moves left. Try another round!" % [score, best_score]
 	dialog.confirmed.connect(func(): paused = false; _new_game())
 	dialog.ok_button_text = "PLAY AGAIN"
+	add_child(dialog)
+	dialog.popup_centered()
+
+func _finish_time_attack() -> void:
+	if game_over:
+		return
+	game_over = true
+	_finish_mode("TIME ATTACK COMPLETE", "Final score: %d" % score)
+
+func _finish_mode(title: String, message: String) -> void:
+	if paused and game_over:
+		return
+	paused = true
+	game_over = true
+	if active_mode != "zen":
+		SaveData.record_mode_score(active_mode, score)
+	if active_mode != "zen":
+		SaveData.record_game_completed(score)
+	var dialog := AcceptDialog.new()
+	dialog.title = title
+	dialog.dialog_text = "%s\n\nSCORE  %d\nPERSONAL BEST  %d" % [message, score, SaveData.mode_record(active_mode)]
+	dialog.ok_button_text = "PLAY AGAIN"
+	dialog.confirmed.connect(func(): paused = false; _new_game())
 	add_child(dialog)
 	dialog.popup_centered()
 
