@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Blockverse
@@ -9,21 +10,58 @@ namespace Blockverse
         [SerializeField] private RectTransform boardRoot, trayRoot;
         [SerializeField] private Text scoreLabel, goalLabel, hintLabel;
         [SerializeField] private Button restartButton;
-
         private BoardModel board;
         private int score, level = 1, randomSeed, piecesUsed, bestScore, coins, linesCleared, movesUsed;
         private LevelConfig config;
         private readonly List<PieceDragView> trayPieces = new List<PieceDragView>();
         private bool levelFinished;
         private GameObject resultOverlay;
+        private GameAudio gameAudio;
+        private Button audioButton;
+        private readonly List<Coroutine> runningEffects = new List<Coroutine>();
 
         private void Start()
         {
+            gameAudio = gameObject.AddComponent<GameAudio>();
             bestScore = PlayerPrefs.GetInt("blockverse_best_score", 0);
             coins = PlayerPrefs.GetInt("blockverse_coins", 0);
             level = PlayerPrefs.GetInt("blockverse_level", 1);
             if (restartButton != null) restartButton.onClick.AddListener(StartLevel);
+            CreateAudioToggle();
             StartLevel();
+        }
+
+        private void CreateAudioToggle()
+        {
+            Canvas canvas = boardRoot != null ? boardRoot.GetComponentInParent<Canvas>() : null;
+            if (canvas == null) return;
+            var go = new GameObject("SoundToggle", typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(canvas.transform, false);
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1, 1);
+            rect.anchorMax = new Vector2(1, 1);
+            rect.pivot = new Vector2(1, 1);
+            rect.anchoredPosition = new Vector2(-28, -28);
+            rect.sizeDelta = new Vector2(150, 64);
+            go.GetComponent<Image>().color = new Color(.13f, .2f, .32f, 1);
+            audioButton = go.GetComponent<Button>();
+            audioButton.onClick.AddListener(() => { gameAudio.ToggleMute(); RefreshAudioButton(); });
+            var labelObject = new GameObject("Label", typeof(RectTransform), typeof(Text));
+            labelObject.transform.SetParent(go.transform, false);
+            var labelRect = labelObject.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = Vector2.zero; labelRect.offsetMax = Vector2.zero;
+            var label = labelObject.GetComponent<Text>();
+            label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            label.fontSize = 24; label.alignment = TextAnchor.MiddleCenter; label.color = Color.white;
+            RefreshAudioButton();
+        }
+
+        private void RefreshAudioButton()
+        {
+            if (audioButton == null) return;
+            var label = audioButton.GetComponentInChildren<Text>();
+            if (label != null) label.text = gameAudio.Muted ? "SOUND OFF" : "SOUND ON";
         }
 
         public void StartLevel()
@@ -116,23 +154,22 @@ namespace Blockverse
             int affected = 0;
             switch (piece.Special)
             {
-                case SpecialPieceType.Bomb: affected = board.Blast(centerX, centerY); break;
-                case SpecialPieceType.Rainbow: affected = board.ClearRow(centerY); break;
-                case SpecialPieceType.Lightning: affected = board.ClearColumn(centerX); break;
+                case SpecialPieceType.Bomb: affected = board.Blast(centerX, centerY); gameAudio.PlayBomb(); SpawnBurst(centerX, centerY, new Color(1f, .35f, .18f)); break;
+                case SpecialPieceType.Rainbow: affected = board.ClearRow(centerY); SpawnBurst(centerX, centerY, new Color(.75f, .4f, 1f)); break;
+                case SpecialPieceType.Lightning: affected = board.ClearColumn(centerX); SpawnBurst(centerX, centerY, new Color(1f, .85f, .25f)); break;
             }
 
             int cleared = board.ClearCompletedLines();
             linesCleared += cleared;
             score += CountCells(piece.Shape) * 10 + cleared * config.BoardSize * 10 + affected * 5;
-            if (score > bestScore)
-            {
-                bestScore = score;
-                PlayerPrefs.SetInt("blockverse_best_score", bestScore);
-            }
+            if (score > bestScore) { bestScore = score; PlayerPrefs.SetInt("blockverse_best_score", bestScore); }
             if (cleared > 0) coins += cleared * 2;
             PlayerPrefs.SetInt("blockverse_coins", coins);
             PlayerPrefs.Save();
             RefreshBoardVisuals();
+            AnimateBoard();
+            gameAudio.PlayPlace();
+            if (cleared > 0) gameAudio.PlayClear();
             RefreshLabels();
 
             if (IsObjectiveComplete()) CompleteLevel();
@@ -141,6 +178,63 @@ namespace Blockverse
                 hintLabel.text = (cleared > 0 ? $"NICE! {cleared} LINE(S) CLEARED" : "GOOD MOVE!") +
                     (piece.Special == SpecialPieceType.None ? "" : $" — {piece.Special.ToString().ToUpperInvariant()}");
             return true;
+        }
+
+        private void AnimateBoard()
+        {
+            if (boardRoot == null) return;
+            foreach (Transform tile in boardRoot)
+                StartCoroutine(PulseTile(tile));
+        }
+
+        private IEnumerator PulseTile(Transform tile)
+        {
+            if (tile == null) yield break;
+            Vector3 start = tile.localScale;
+            float elapsed = 0f, duration = .12f;
+            while (elapsed < duration && tile != null)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float pulse = 1f + Mathf.Sin(Mathf.Clamp01(elapsed / duration) * Mathf.PI) * .09f;
+                tile.localScale = start * pulse;
+                yield return null;
+            }
+            if (tile != null) tile.localScale = start;
+        }
+
+        private void SpawnBurst(int centerX, int centerY, Color color)
+        {
+            if (boardRoot == null) return;
+            var grid = boardRoot.GetComponent<GridLayoutGroup>();
+            float pitchX = grid.cellSize.x + grid.spacing.x, pitchY = grid.cellSize.y + grid.spacing.y;
+            Vector2 position = new Vector2(boardRoot.rect.xMin + (centerX + .5f) * pitchX,
+                boardRoot.rect.yMax - (centerY + .5f) * pitchY);
+            for (int i = 0; i < 8; i++)
+            {
+                var particle = new GameObject("BlockBurst", typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
+                particle.transform.SetParent(boardRoot, false);
+                var rect = particle.GetComponent<RectTransform>();
+                rect.sizeDelta = new Vector2(14, 14);
+                rect.anchoredPosition = position;
+                particle.GetComponent<Image>().color = color;
+                StartCoroutine(AnimateParticle(rect, particle.GetComponent<CanvasGroup>(), i * Mathf.PI / 4f));
+            }
+        }
+
+        private IEnumerator AnimateParticle(RectTransform rect, CanvasGroup group, float angle)
+        {
+            Vector2 start = rect.anchoredPosition;
+            float elapsed = 0f, duration = .38f;
+            while (elapsed < duration && rect != null)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                rect.anchoredPosition = start + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * (85f * t);
+                rect.localScale = Vector3.one * (1f - .65f * t);
+                group.alpha = 1f - t;
+                yield return null;
+            }
+            if (rect != null) Destroy(rect.gameObject);
         }
 
         private bool IsObjectiveComplete()
@@ -161,7 +255,7 @@ namespace Blockverse
             {
                 case LevelGoal.ClearLines: return $"LINES {linesCleared}/{config.Target}";
                 case LevelGoal.ReachScore: return $"SCORE {score}/{config.Target * 100}";
-                case LevelGoal.LimitedMoves: return $"LINES {linesCleared}/{config.Target}  •  MOVES {movesUsed}/{config.MoveLimit}";
+                case LevelGoal.LimitedMoves: return $"LINES {linesCleared}/{config.Target} • MOVES {movesUsed}/{config.MoveLimit}";
                 case LevelGoal.Boss: return $"BOSS OBSTACLES {board.CountObstacles()} LEFT";
                 default: return config.Goal.ToString().ToUpperInvariant();
             }
@@ -171,6 +265,7 @@ namespace Blockverse
         {
             if (levelFinished) return;
             levelFinished = true;
+            gameAudio.PlayWin();
             int reward = 20 + level * 2;
             coins += reward;
             int unlocked = Mathf.Max(PlayerPrefs.GetInt("blockverse_level", 1), level + 1);
@@ -185,6 +280,7 @@ namespace Blockverse
         {
             if (levelFinished) return;
             levelFinished = true;
+            gameAudio.PlayFail();
             ShowResult(false, "TRY AGAIN", $"{reason}\nProgress: {ObjectiveText()}\nScore: {score:N0}");
         }
 
@@ -193,25 +289,18 @@ namespace Blockverse
             if (resultOverlay != null) Destroy(resultOverlay);
             Canvas canvas = boardRoot != null ? boardRoot.GetComponentInParent<Canvas>() : null;
             if (canvas == null) return;
-
             resultOverlay = new GameObject("LevelResultOverlay", typeof(RectTransform), typeof(Image));
             resultOverlay.transform.SetParent(canvas.transform, false);
             var overlayRect = resultOverlay.GetComponent<RectTransform>();
-            overlayRect.anchorMin = Vector2.zero;
-            overlayRect.anchorMax = Vector2.one;
-            overlayRect.offsetMin = Vector2.zero;
-            overlayRect.offsetMax = Vector2.zero;
+            overlayRect.anchorMin = Vector2.zero; overlayRect.anchorMax = Vector2.one;
+            overlayRect.offsetMin = Vector2.zero; overlayRect.offsetMax = Vector2.zero;
             resultOverlay.GetComponent<Image>().color = new Color(.025f, .04f, .08f, .88f);
-
             var card = new GameObject("ResultCard", typeof(RectTransform), typeof(Image));
             card.transform.SetParent(resultOverlay.transform, false);
             var cardRect = card.GetComponent<RectTransform>();
-            cardRect.anchorMin = new Vector2(.1f, .34f);
-            cardRect.anchorMax = new Vector2(.9f, .66f);
-            cardRect.offsetMin = Vector2.zero;
-            cardRect.offsetMax = Vector2.zero;
+            cardRect.anchorMin = new Vector2(.1f, .34f); cardRect.anchorMax = new Vector2(.9f, .66f);
+            cardRect.offsetMin = Vector2.zero; cardRect.offsetMax = Vector2.zero;
             card.GetComponent<Image>().color = new Color(.09f, .13f, .21f, 1);
-
             CreateOverlayText(card.transform, heading, 48, new Vector2(0, 145), new Vector2(760, 90), new Color(1, .82f, .35f));
             CreateOverlayText(card.transform, message, 28, new Vector2(0, 25), new Vector2(760, 150), Color.white);
             CreateOverlayButton(card.transform, won ? "NEXT LEVEL" : "RETRY", new Vector2(0, -115), won ? (UnityEngine.Events.UnityAction)GoToNextLevel : StartLevel);
@@ -221,28 +310,19 @@ namespace Blockverse
         {
             var go = new GameObject("ResultText", typeof(RectTransform), typeof(Text));
             go.transform.SetParent(parent, false);
-            var rect = go.GetComponent<RectTransform>();
-            rect.sizeDelta = dimensions;
-            rect.anchoredPosition = position;
+            var rect = go.GetComponent<RectTransform>(); rect.sizeDelta = dimensions; rect.anchoredPosition = position;
             var text = go.GetComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            text.fontSize = size;
-            text.fontStyle = FontStyle.Bold;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = color;
-            text.text = value;
+            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf"); text.fontSize = size;
+            text.fontStyle = FontStyle.Bold; text.alignment = TextAnchor.MiddleCenter; text.color = color; text.text = value;
         }
 
         private void CreateOverlayButton(Transform parent, string label, Vector2 position, UnityEngine.Events.UnityAction action)
         {
             var go = new GameObject("ResultButton", typeof(RectTransform), typeof(Image), typeof(Button));
             go.transform.SetParent(parent, false);
-            var rect = go.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(440, 90);
-            rect.anchoredPosition = position;
+            var rect = go.GetComponent<RectTransform>(); rect.sizeDelta = new Vector2(440, 90); rect.anchoredPosition = position;
             go.GetComponent<Image>().color = new Color(.2f, .53f, .95f);
-            var button = go.GetComponent<Button>();
-            button.onClick.AddListener(action);
+            go.GetComponent<Button>().onClick.AddListener(action);
             CreateOverlayText(go.transform, label, 30, Vector2.zero, new Vector2(420, 80), Color.white);
         }
 
@@ -311,7 +391,7 @@ namespace Blockverse
         private void RefreshLabels()
         {
             if (scoreLabel != null) scoreLabel.text = $"SCORE  {score:N0}";
-            if (goalLabel != null) goalLabel.text = $"LEVEL {level}  •  {ObjectiveText()}  •  BEST {bestScore:N0}  •  COINS {coins}";
+            if (goalLabel != null) goalLabel.text = $"LEVEL {level} • {ObjectiveText()} • BEST {bestScore:N0} • COINS {coins}";
         }
     }
 }
