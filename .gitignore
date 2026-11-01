@@ -1,10 +1,31 @@
-# Godot
-.godot/
-.import/
-.export/
-*.translation
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+MemoryCaptures/
+Recordings/
 
-# Android / signing
+# IDE
+.vs/
+.idea/
+.vscode/
+*.csproj
+*.sln
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svclog
+
+# Unity package and crash files
+sysinfo.txt
+*.stackdump
+
+# Android signing
 .keystore
 *.jks
 *.keystore
@@ -12,12 +33,10 @@ key.properties
 local.properties
 
 # Build outputs
-build/
 dist/
 *.apk
 *.aab
 
-# Editor / OS
+# OS
 .DS_Store
-.idea/
-.vscode/
+Thumbs.db

@@ -1,42 +1,45 @@
-# Browser-first development workflow
+# Unity browser-first development workflow
 
-## 1. Open the workspace
+## 1. Project location
 
-1. Open the repository on GitHub.
-2. Select **Code → Codespaces → Create codespace on main**.
-3. Use the browser editor to edit GDScript, scenes, resources, and project configuration.
-4. Commit and push your changes.
+The active game project is `projects/blockverse-unity`. It uses Unity 6 and C#.
 
-Codespaces is a browser-based development environment, not the full Godot visual editor. You can edit text-based Godot files and run command-line tools there. Scene editing that depends on Godot's GUI editor may require a separate remote-desktop/editor solution or a local Godot editor.
+You can edit scripts and configuration in GitHub or Codespaces. The Unity Editor is still needed for visual scene editing, Play Mode testing, importing assets, and final device testing.
 
-## 2. Start a game
+## 2. Generate the starter scene
 
-Choose a starter under `templates/godot-2d` or `templates/godot-3d`, copy it into a new folder under `projects/`, then open that folder as the Godot project in your preferred Godot editor.
+1. Open `projects/blockverse-unity` in Unity 6.0.60f1.
+2. Wait for package import and script compilation.
+3. Select **BLOCKVERSE → Setup Starter Scene** from the editor menu.
+4. Open `Assets/Scenes/Game.unity` and press Play.
 
-Keep each game self-contained:
-- `project.godot`
-- `scenes/`
-- `scripts/`
-- `assets/`
-- `export_presets.cfg` (configure Android export in Godot; do not commit signing secrets)
+The starter scene generator creates a basic canvas, score/level labels, board container, and restart button. It is a foundation, not the completed game.
 
-## 3. Android export prerequisites
+## 3. Android settings
 
-Before building an Android package:
-- Install the matching Godot export templates for the Godot version used by the project.
-- Configure Android SDK, platform-tools, build-tools, command-line tools, and Java.
-- In Godot, configure the Android SDK paths and create an Android export preset.
-- Set a unique application ID, version, orientation, permissions, and package format.
-- For a release build, store keystore and passwords in GitHub Actions secrets. Never commit a keystore or passwords.
+In Unity:
+- Install Android Build Support, Android SDK & NDK Tools, and OpenJDK through Unity Hub.
+- Set the package identifier to `com.dev.blockverse`.
+- Set orientation to Portrait.
+- Configure app icon, version, permissions, and scripting backend before release.
+- Use a private keystore for production signing; never commit it.
 
-## 4. Cloud builds
+## 4. GitHub cloud builds
 
-Use **Actions → Android Export** and provide:
-- `project_path`: folder containing `project.godot`, e.g. `projects/my-game`.
-- `export_preset`: exact preset name from that project's `export_presets.cfg`, e.g. `Android`.
+The workflow is **Actions → BLOCKVERSE Unity Android**. It builds the Unity project at `projects/blockverse-unity` for Android and uploads available outputs as an artifact.
 
-The workflow is a configurable starting point. It expects the runner image to contain a compatible Godot CLI, export templates, Android SDK, and Java. Verify the image/tool versions against your project before relying on it for release builds.
+Required repository secrets:
+- `UNITY_LICENSE`: Unity serial or license activation content supported by GameCI.
+- `UNITY_EMAIL`: Unity account email.
+- `UNITY_PASSWORD`: Unity account password.
 
-## 5. Artifacts
+Keep these values in GitHub Actions secrets, not in project files. The first build may fail until a valid license and Android module compatibility are configured.
 
-Successful runs upload APK and AAB files as workflow artifacts. Open the completed workflow run in GitHub Actions and download its **android-build** artifact.
+## 5. Validation
+
+Before publishing:
+- Open the project in the exact Unity editor version in `ProjectSettings/ProjectVersion.txt`.
+- Resolve all compiler errors.
+- Run EditMode/PlayMode tests.
+- Build and test on a physical Android device.
+- Configure release signing and verify the AAB in Google Play Console.

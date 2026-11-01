@@ -1,38 +1,45 @@
 # Android Game Factory
 
-A browser-first Godot workspace for building Android 2D and 3D games with cloud-based builds.
+Browser-first development workspace for Android games built with **Unity 6 and C#**.
 
-## Goals
+## Current game
 
-- Develop and manage game projects from a browser.
-- Use Godot and GDScript for 2D and 3D games.
-- Build Android APK and AAB packages with GitHub Actions.
-- Keep project templates reusable and version-controlled.
+- **BLOCKVERSE** — mobile block puzzle game
+- Engine: Unity 6
+- Language: C#
+- Platform: Android
+- Application ID: `com.dev.blockverse`
+- Project: `projects/blockverse-unity/`
 
 ## Repository layout
 
 ```text
-docs/                 Guides and workflows
-templates/godot-2d/   Reusable 2D starter template
-templates/godot-3d/   Reusable 3D starter template
-projects/             Your actual game projects
-.github/workflows/    Cloud Android build workflows
+projects/blockverse-unity/   Unity game project
+docs/                        Development and cloud-build guides
+.github/workflows/           GitHub Actions automation
 ```
 
-## Cloud workflow
+## Development workflow
 
-1. Open this repository in GitHub Codespaces.
-2. Edit project files in the browser.
-3. Commit and push changes to GitHub.
-4. Run the Android build workflow from the Actions tab.
-5. Download the generated APK or AAB from the workflow artifacts.
+1. Open the repository in GitHub Codespaces or edit files through GitHub.
+2. Use an installed Unity 6 editor when you need to inspect scenes, run the game, or make visual changes.
+3. Commit and push changes to the `unity-migration` branch while the migration is in progress.
+4. Configure Unity licensing secrets in GitHub repository settings.
+5. Run **Actions → BLOCKVERSE Unity Android** to build Android artifacts.
+
+## GitHub Actions secrets
+
+The Unity build workflow expects:
+- `UNITY_LICENSE`
+- `UNITY_EMAIL`
+- `UNITY_PASSWORD`
+
+These must be added by the repository owner. Never commit Unity license files, signing keys, or passwords.
 
 ## Important
 
-Godot's full visual editor is a desktop application. This repository is designed for browser-based source editing and cloud/headless builds; it does not provide a full Godot editor running inside the browser.
-
-Android export requires a compatible Godot version, Android export templates, Android SDK, build-tools, and Java. The workflow will install/configure these in its cloud runner.
+GitHub stores the Unity project and can run cloud builds, but it does not replace the Unity Editor for visual scene editing and live gameplay testing. A successful Android build also requires a valid Unity license and Android build support.
 
 ## Status
 
-Starter repository setup in progress.
+Unity migration started. Core board model, procedural level configuration, piece definitions, starter scene generator, and Android CI workflow are in place. Runtime validation and APK/AAB export are not yet verified.
