@@ -1,9 +1,7 @@
 extends Node
-## Lightweight versioned local save layer. Uses ConfigFile for a dependency-free
-## first milestone; data remains on-device and works offline.
 
 const SAVE_PATH := "user://blockverse_save.cfg"
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 
 var data: Dictionary = {}
 
@@ -13,10 +11,7 @@ func _ready() -> void:
 func load_data() -> void:
 	var config := ConfigFile.new()
 	var error := config.load(SAVE_PATH)
-	if error == OK:
-		data = config.get_value("save", "data", _default_data())
-	else:
-		data = _default_data()
+	data = config.get_value("save", "data", _default_data()) if error == OK else _default_data()
 	_normalize_data()
 	save_data()
 
@@ -42,14 +37,12 @@ func update_setting(key: String, value: Variant) -> void:
 	save_data()
 
 func get_setting(key: String, fallback: Variant = null) -> Variant:
-	var settings: Dictionary = data.get("settings", {})
-	return settings.get(key, fallback)
+	return data.get("settings", {}).get(key, fallback)
 
 func add_coins(amount: int) -> void:
-	if amount <= 0:
-		return
-	data["coins"] = int(data.get("coins", 0)) + amount
-	save_data()
+	if amount > 0:
+		data["coins"] = int(data.get("coins", 0)) + amount
+		save_data()
 
 func _default_data() -> Dictionary:
 	return {
@@ -63,12 +56,8 @@ func _default_data() -> Dictionary:
 		"total_lines_cleared": 0,
 		"unlocked_world": 1,
 		"unlocked_level": 1,
-		"settings": {
-			"sound": true,
-			"music": true,
-			"vibration": true,
-			"notifications": true
-		}
+		"board_size": 5,
+		"settings": {"sound": true, "music": true, "vibration": true, "notifications": true}
 	}
 
 func _normalize_data() -> void:
@@ -77,9 +66,9 @@ func _normalize_data() -> void:
 		if not data.has(key):
 			data[key] = defaults[key]
 	if not data.get("settings") is Dictionary:
-		data["settings"] = defaults["settings"]
-	var settings: Dictionary = data["settings"]
+		data["settings"] = defaults["settings"].duplicate(true)
 	for key in defaults["settings"]:
-		if not settings.has(key):
-			settings[key] = defaults["settings"][key]
+		if not data["settings"].has(key):
+			data["settings"][key] = defaults["settings"][key]
+	data["board_size"] = clampi(int(data.get("board_size", 5)), 5, 10)
 	data["save_version"] = SAVE_VERSION
