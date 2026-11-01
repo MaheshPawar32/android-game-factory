@@ -479,7 +479,7 @@ func _try_place_selected(origin: Vector2i) -> void:
 
 func _level_goal_text() -> String:
 	if level_objective_type == "score":
-		return "SCORE TRIAL • REACH %d POINTS" % level_target_score
+		return "SCORE TRIAL • REACH %d POINTS%s" % [level_target_score, " • %d MOVES" % level_moves_left if level_move_limit > 0 else ""]
 	if level_objective_type == "boss":
 		return "BOSS LEVEL • CLEAR %d LINES • %d MOVES" % [level_objective, level_moves_left]
 	if level_move_limit > 0:
