@@ -556,7 +556,7 @@ func _show_victory_screen() -> void:
 	var current := int(SaveData.get_value("current_level", 1))
 	var next_level := current + 1
 	SaveData.set_value("unlocked_level", maxi(int(SaveData.get_value("unlocked_level", 1)), next_level))
-	SaveData.set_value("unlocked_world", clampi(int(ceil(float(next_level) / 12.0)), 1, 4))
+	SaveData.set_value("unlocked_world", LevelData.world_for_level(next_level))
 	var level_config: Dictionary = LevelData.configuration(current)
 	var reward := int(level_config.reward_coins)
 	var stars := 3 if score >= 600 else (2 if score >= 300 else 1)
