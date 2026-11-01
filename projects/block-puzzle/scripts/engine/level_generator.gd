@@ -30,6 +30,8 @@ static func configuration(level: int) -> Dictionary:
 		move_limit = objective * 5 + 8
 	var objective_type := "boss" if is_boss else ("score" if is_score_trial else ("limited_moves" if move_limit > 0 else "lines"))
 	var target_score := mini(250 + safe_level * 8, 5000) if is_score_trial else 0
+	var obstacle_count := 0 if safe_level < 4 else mini(1 + int(safe_level / 18), 12)
+	var obstacle_pattern := "none" if obstacle_count == 0 else ("stone" if safe_level % 3 == 1 else ("ice" if safe_level % 3 == 2 else "mixed"))
 	return {
 		"level": safe_level,
 		"world": world_for_level(safe_level),
@@ -40,6 +42,8 @@ static func configuration(level: int) -> Dictionary:
 		"move_limit": move_limit,
 		"target_score": target_score,
 		"is_boss": is_boss,
+		"obstacle_count": obstacle_count,
+		"obstacle_pattern": obstacle_pattern,
 		"suggested_board_size": suggested_board,
 		"reward_coins": reward,
 		"difficulty": "STARTER" if safe_level <= 20 else ("RISING" if safe_level <= 100 else ("EXPERT" if safe_level <= 500 else "MASTER"))
