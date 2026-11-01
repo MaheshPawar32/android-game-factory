@@ -6,7 +6,24 @@ Original Unity project: `projects/blockverse-unity/` (preserved; no Unity files 
 ## Godot copy
 New project: `projects/blockverse-godot/`
 
-## First migration batch
+## Implemented gameplay batches
+
+### Batch 1 — playable board foundation
+- Godot 4.x portrait project, runtime UI, 8×8 board and three-piece tray.
+- Tap-to-select/tap-to-place, placement validation, row/column clearing and score.
+
+### Batch 2 — special pieces and obstacles
+- Bomb, Rainbow and Lightning special pieces.
+- Stone and two-hit Ice obstacles; specials and line clears can damage them.
+
+### Batch 3 — objectives, moves and boss stages
+- Level-based line-clear objectives with a move limit.
+- Every fifth level is a boss stage requiring all obstacles to be cleared.
+- Win bonus, retry and next-level button flow.
+
+## Earlier migration notes
+
+### First migration batch
 - Godot project metadata and portrait viewport.
 - Main scene and runtime-created UI.
 - 8×8 board model.
@@ -16,7 +33,7 @@ New project: `projects/blockverse-godot/`
 - Basic score counter and new-game reset.
 
 ## Not yet migrated
-Bomb/Rainbow/Lightning special pieces; stone/ice obstacles; objectives and boss levels; level unlocks; daily rewards; shop and themes; daily missions; achievements; pause; revive; undo; audio; haptics; save persistence.
+Persistent level/score saving; daily rewards; shop and themes; daily missions; achievements; pause; revive; undo; audio; haptics; drag-and-drop controls.
 
 ## Validation
 Files have been committed only. Open/import in Godot Android Editor and test on device before treating this batch as passing. APK/AAB export has not been performed.
