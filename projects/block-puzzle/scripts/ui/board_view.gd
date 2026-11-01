@@ -19,6 +19,9 @@ var preview_valid := false
 var last_cleared_rows: Array = []
 var last_cleared_columns: Array = []
 var _clear_flash := 0.0
+var _special_flash_cells: Array[Vector2i] = []
+var _special_flash_color := Color.WHITE
+var _special_flash := 0.0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -64,6 +67,18 @@ func _board_side() -> float:
 func _cell_size() -> float:
 	return (_board_side() - GAP * (GRID_SIZE - 1)) / GRID_SIZE
 
+func flash_special_cells(points: Array, color: Color) -> void:
+	_special_flash_cells.clear()
+	for point in points:
+		if point is Vector2i:
+			_special_flash_cells.append(point)
+	_special_flash_color = color
+	_special_flash = 1.0
+	var tween := create_tween()
+	tween.tween_property(self, "_special_flash", 0.0, 0.32)
+	tween.tween_callback(queue_redraw)
+	queue_redraw()
+
 func _draw() -> void:
 	if board_model == null:
 		return
@@ -78,6 +93,8 @@ func _draw() -> void:
 				fill = COLORS[posmod(value, COLORS.size())]
 			if _clear_flash > 0.0 and ((y in last_cleared_rows) or (x in last_cleared_columns)):
 				fill = fill.lerp(Color.WHITE, _clear_flash * 0.75)
+			if _special_flash > 0.0 and Vector2i(x, y) in _special_flash_cells:
+				fill = fill.lerp(_special_flash_color, _special_flash * 0.82)
 			draw_rect(rect, fill, true)
 			if value != -1:
 				draw_rect(rect, fill.lightened(0.16), false, 1.4)
