@@ -1,7 +1,7 @@
 extends Node
 
 const SAVE_PATH := "user://blockverse_save.cfg"
-const SAVE_VERSION := 4
+const SAVE_VERSION := 5
 const MISSION_DEFINITIONS := {
 	"place_blocks": {"title": "Place 25 blocks", "target": 25, "reward": 40, "xp": 30},
 	"clear_lines": {"title": "Clear 5 lines", "target": 5, "reward": 50, "xp": 35},
@@ -162,6 +162,17 @@ func record_mode_score(mode_id: String, value: int) -> void:
 	data["mode_records"] = records
 	save_data()
 
+func record_level_completion(level: int, final_score: int, stars: int) -> void:
+	var records: Dictionary = data.get("level_records", {})
+	var key := str(maxi(level, 1))
+	var previous: Dictionary = records.get(key, {})
+	records[key] = {"best_score": maxi(int(previous.get("best_score", 0)), final_score), "stars": maxi(int(previous.get("stars", 0)), clampi(stars, 1, 3))}
+	data["level_records"] = records
+	save_data()
+
+func level_stars(level: int) -> int:
+	return int(data.get("level_records", {}).get(str(maxi(level, 1)), {}).get("stars", 0))
+
 func mode_record(mode_id: String) -> int:
 	return int(data.get("mode_records", {}).get(mode_id, 0))
 
@@ -220,6 +231,7 @@ func _default_data() -> Dictionary:
 		"coins": 250,
 		"best_score": 0,
 		"mode_records": {},
+		"level_records": {},
 		"daily_seed": 0,
 		"games_played": 0,
 		"total_lines_cleared": 0,
@@ -246,7 +258,7 @@ func _normalize_data() -> void:
 	for key in defaults["settings"]:
 		if not data["settings"].has(key):
 			data["settings"][key] = defaults["settings"][key]
-	for key in ["daily_missions", "mission_claimed", "achievements", "mode_records"]:
+	for key in ["daily_missions", "mission_claimed", "achievements", "mode_records", "level_records"]:
 		if not data.get(key) is Dictionary:
 			data[key] = {}
 	for key in ["daily_missions", "mission_claimed", "achievements"]:
