@@ -546,7 +546,7 @@ namespace Blockverse
                 if (image == null) { index++; continue; }
                 switch (board.GetCell(x, y))
                 {
-                    case CellType.Normal: image.color = new Color(.24f, .63f, 1); break;
+                    case CellType.Normal: image.color = ThemeColors[Mathf.Clamp(PlayerPrefs.GetInt("blockverse_theme", 0), 0, ThemeColors.Length - 1)]; break;
                     case CellType.Stone: image.color = new Color(.38f, .4f, .45f); break;
                     case CellType.Ice: image.color = new Color(.35f, .85f, 1); break;
                     case CellType.CrackedIce: image.color = new Color(.2f, .58f, .7f); break;
