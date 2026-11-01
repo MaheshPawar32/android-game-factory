@@ -6,7 +6,7 @@ const Board = preload("res://scripts/engine/board_model.gd")
 const Pieces = preload("res://scripts/engine/piece_definitions.gd")
 const Generator = preload("res://scripts/engine/piece_generator.gd")
 const Scoring = preload("res://scripts/engine/scoring_rules.gd")
-const Specials = preload("res://scripts/engine/special_block_resolver.gd")
+const SpecialResolverScript = preload("res://scripts/engine/special_block_resolver.gd")
 
 var passed := 0
 var failed := 0
@@ -101,7 +101,7 @@ func _test_scoring() -> void:
 
 func _test_special_effect_bounds() -> void:
 	var board = Board.new(10)
-	var cells: Array[Vector2i] = Specials.bomb_cells(board, Vector2i.ZERO)
+	var cells: Array[Vector2i] = SpecialResolverScript.bomb_cells(board, Vector2i.ZERO)
 	_check(cells.size() == 4, "corner bomb clips its 3x3 area to board bounds")
 	var center_cells: Array[Vector2i] = Specials.bomb_cells(board, Vector2i(5, 5))
 	_check(center_cells.size() == 9, "center bomb returns a 3x3 area")
