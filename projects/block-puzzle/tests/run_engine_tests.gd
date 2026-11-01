@@ -28,6 +28,7 @@ func _initialize() -> void:
 	_test_special_resolution()
 	_test_special_generator_distribution()
 	_test_procedural_levels()
+	_test_board_obstacles()
 	print("\nBLOCKVERSE ENGINE TESTS: %d passed, %d failed" % [passed, failed])
 	quit(1 if failed > 0 else 0)
 
@@ -114,7 +115,7 @@ func _test_rainbow_line() -> void:
 	board.cells[2][4] = 2
 	var cells: Array[Vector2i] = SpecialResolverScript.rainbow_line_cells(board, true, 2)
 	_check(cells.size() == 2, "rainbow returns occupied cells in chosen row")
-	_check(Specials.rainbow_line_cells(board, false, 12).is_empty(), "rainbow rejects invalid line index")
+	_check(SpecialResolverScript.rainbow_line_cells(board, false, 12).is_empty(), "rainbow rejects invalid line index")
 
 func _test_lightning_connectivity() -> void:
 	var board = Board.new()
@@ -192,3 +193,18 @@ func _test_procedural_levels() -> void:
 	_check(str(limited.objective_type) == "limited_moves" and int(limited.move_limit) > 0, "every fifth level introduces a move-limited challenge")
 	_check(str(score_trial.objective_type) == "score" and int(score_trial.target_score) > 0, "score-trial levels generate score targets")
 	_check(str(boss.objective_type) == "boss" and int(boss.objective_lines) >= 6 and int(boss.move_limit) > 0, "every twenty-fifth level becomes a boss challenge")
+
+func _test_board_obstacles() -> void:
+	var board = Board.new(5)
+	_check(board.set_obstacle(2, 2, Board.STONE), "stone obstacle can be placed on empty board cell")
+	_check(not board.can_place([Vector2i.ZERO], Vector2i(2, 2)), "stone obstacle blocks piece placement")
+	_check(not board.set_obstacle(2, 2, Board.ICE), "obstacle cannot overwrite occupied cell")
+	_check(board.obstacle_count() == 1 and board.obstacle_count(Board.STONE) == 1, "board counts obstacle types")
+	for x in range(board.size):
+		if x != 2:
+			board.cells[2][x] = 0
+	var cleared: Dictionary = board.clear_completed_lines()
+	_check(cleared.rows == [2] and board.obstacle_count() == 0, "completed row clears obstacles occupying that row")
+	var snapshot: Dictionary = board.to_dictionary()
+	var restored = Board.new()
+	_check(restored.load_dictionary(snapshot), "board snapshot accepts obstacle cell values")
