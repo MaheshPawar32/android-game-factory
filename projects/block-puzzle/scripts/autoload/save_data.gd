@@ -7,7 +7,14 @@ const MISSION_DEFINITIONS := {
 	"clear_lines": {"title": "Clear 5 lines", "target": 5, "reward": 50, "xp": 35},
 	"play_games": {"title": "Play 2 rounds", "target": 2, "reward": 35, "xp": 25}
 }
-const ACHIEVEMENTS := {
+const BOARD_SKINS := {
+	"classic": {"title": "Classic Neon", "price": 0, "colors": ["#20C8D9", "#7657F6", "#FFB547", "#FF658B", "#55D68B", "#62A7FF"]},
+	"aurora": {"title": "Aurora Glow", "price": 180, "colors": ["#50E3C2", "#5B8DEF", "#B18CFF", "#F58CCB", "#9CEB7A", "#FFD166"]},
+	"sunset": {"title": "Sunset Rush", "price": 220, "colors": ["#FF6B6B", "#F7B267", "#F79D65", "#C86BFA", "#F25F5C", "#FFD166"]},
+	"ocean": {"title": "Deep Ocean", "price": 260, "colors": ["#00B4D8", "#0077B6", "#48CAE4", "#90E0EF", "#4361EE", "#4CC9F0"]},
+	"forest": {"title": "Forest Calm", "price": 300, "colors": ["#588157", "#A3B18A", "#DAD7CD", "#3A5A40", "#6A994E", "#BC6C25"]}
+}
+const ACHIEVEMENTS :=
 	"first_game": {"title": "First Steps", "description": "Finish your first round", "target": 1, "reward": 30},
 	"first_line": {"title": "Line Maker", "description": "Clear your first line", "target": 1, "reward": 30},
 	"score_500": {"title": "Rising Star", "description": "Reach a score of 500", "target": 500, "reward": 50},
@@ -62,6 +69,35 @@ func add_coins(amount: int, reason: String = "Reward") -> void:
 		history.pop_back()
 	data["wallet_history"] = history
 	save_data()
+
+func owns_skin(skin_id: String) -> bool:
+	return skin_id == "classic" or skin_id in data.get("owned_skins", ["classic"])
+
+func selected_skin() -> String:
+	return str(data.get("selected_skin", "classic"))
+
+func purchase_skin(skin_id: String) -> bool:
+	if not BOARD_SKINS.has(skin_id) or owns_skin(skin_id):
+		return false
+	var price := int(BOARD_SKINS[skin_id].price)
+	if int(data.get("coins", 0)) < price:
+		return false
+	data["coins"] = int(data.get("coins", 0)) - price
+	var owned: Array = data.get("owned_skins", ["classic"])
+	owned.append(skin_id)
+	data["owned_skins"] = owned
+	var history: Array = data.get("wallet_history", [])
+	history.push_front({"amount": -price, "reason": "Board skin: %s" % BOARD_SKINS[skin_id].title, "date": _today_key()})
+	data["wallet_history"] = history
+	save_data()
+	return true
+
+func select_skin(skin_id: String) -> bool:
+	if not owns_skin(skin_id):
+		return false
+	data["selected_skin"] = skin_id
+	save_data()
+	return true
 
 func add_xp(amount: int, reason: String = "Gameplay") -> void:
 	if amount <= 0:
@@ -184,6 +220,8 @@ func _default_data() -> Dictionary:
 		"mission_claimed": {},
 		"achievements": {},
 		"wallet_history": [],
+		"selected_skin": "classic",
+		"owned_skins": ["classic"],
 		"settings": {"sound": true, "music": true, "vibration": true, "notifications": true}
 	}
 
@@ -202,5 +240,9 @@ func _normalize_data() -> void:
 			data[key] = {}
 	if not data.get("wallet_history") is Array:
 		data["wallet_history"] = []
+	if not data.get("owned_skins") is Array:
+		data["owned_skins"] = ["classic"]
+	if str(data.get("selected_skin", "classic")) not in data["owned_skins"]:
+		data["selected_skin"] = "classic"
 	data["board_size"] = clampi(int(data.get("board_size", 5)), 5, 10)
 	data["save_version"] = SAVE_VERSION
