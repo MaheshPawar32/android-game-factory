@@ -1,0 +1,23 @@
+# Godot
+.godot/
+.import/
+.export/
+*.translation
+
+# Android / signing
+.keystore
+*.jks
+*.keystore
+key.properties
+local.properties
+
+# Build outputs
+build/
+dist/
+*.apk
+*.aab
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
