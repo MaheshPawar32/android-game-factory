@@ -81,7 +81,7 @@ func _build_level_select(root: VBoxContainer) -> void:
 	var first_level := (world_id - 1) * LevelData.LEVELS_PER_WORLD + 1
 	var unlocked := int(SaveData.get_value("unlocked_level", 1))
 	root.add_child(_label("WORLD %03d  •  %s" % [world_id, LevelData.world_name(world_id)], 14, MUTED, true))
-	root.add_child(_label("UNLOCKED THROUGH LEVEL %d" % unlocked, 13, Color("#FFD166"), true))
+	root.add_child(_label("UNLOCKED THROUGH LEVEL %d  •  %d / 12 STARS" % [unlocked, _world_stars(first_level)], 13, Color("#FFD166"), true))
 	var sample := LevelData.configuration(first_level)
 	root.add_child(_label("LEVEL OBJECTIVE  •  CLEAR %d LINES" % int(sample.objective_lines), 12, TEAL, true))
 	var scroll := ScrollContainer.new()
@@ -97,7 +97,8 @@ func _build_level_select(root: VBoxContainer) -> void:
 		var global_level := first_level + local_level
 		var config := LevelData.configuration(global_level)
 		var is_unlocked := global_level <= unlocked
-		var marker := "★" if global_level < unlocked else ("▶" if is_unlocked else "🔒")
+		var earned_stars := SaveData.level_stars(global_level)
+		var marker := "★".repeat(earned_stars) if earned_stars > 0 else ("▶" if is_unlocked else "🔒")
 		var tile := _button("%02d\n%s" % [local_level + 1, marker], TEAL if global_level == unlocked else PANEL)
 		tile.custom_minimum_size = Vector2(86, 76)
 		tile.disabled = not is_unlocked
@@ -105,6 +106,12 @@ func _build_level_select(root: VBoxContainer) -> void:
 		tile.pressed.connect(func(): _start_level(global_level))
 		grid.add_child(tile)
 	_add_bottom_button(root, "BACK TO WORLDS", Color("#293657"), func(): AppRouter.open_adventure_map())
+
+func _world_stars(first_level: int) -> int:
+	var total := 0
+	for level in range(first_level, first_level + LevelData.LEVELS_PER_WORLD):
+		total += SaveData.level_stars(level)
+	return total
 
 func _start_level(level: int) -> void:
 	if not LevelData.is_supported(level):
