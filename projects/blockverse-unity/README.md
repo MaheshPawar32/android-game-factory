@@ -16,6 +16,9 @@
 - Successful levels unlock the next level, award bonus coins, and save a three-star completion record.
 - Failure overlay appears when the move limit is reached or no remaining piece can be placed.
 - Runtime win/fail overlay provides Next Level or Retry actions.
+- Animated board pulse and special-block burst particles.
+- Procedurally generated placement, clear, bomb, win, and fail sound effects (no external audio assets required).
+- Persistent in-game sound toggle saved locally.
 - Deterministic obstacles and procedural level configuration.
 - Editor setup menu creates the starter scene and configures Android identity/build scene.
 
