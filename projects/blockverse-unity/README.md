@@ -10,7 +10,8 @@
 - 8×8 starting grid with touch drag-and-drop and three-piece tray.
 - Special pieces: Bomb damages a 3×3 area, Rainbow damages a row, and Lightning damages a column.
 - Stone breaks in one hit; ice requires two hits.
-- Simultaneous row/column clearing and score calculation.
+- Simultaneous row/column clearing, score calculation and consecutive-clear combo bonuses.
+- Board rendering safely ignores non-cell visual effects when mapping model cells.
 - Best score and coins persist locally with PlayerPrefs.
 - Level objectives: clear a line target, reach a score target, clear lines within a move limit, and boss levels that require clearing all obstacles.
 - Successful levels unlock the next level, award bonus coins, and save a three-star completion record.
