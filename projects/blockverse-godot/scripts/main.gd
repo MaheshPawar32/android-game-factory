@@ -14,6 +14,8 @@ const SHAPES := [
 const EMPTY := -1
 const STONE := -2
 const ICE := -3
+const SAVE_PATH := "user://blockverse_save.cfg"
+const THEME_PALETTES := [{"name": "MIDNIGHT", "background": "#111a31", "cell": "#202d49", "accent": "#65d8ff"}, {"name": "SUNSET", "background": "#302039", "cell": "#51334b", "accent": "#ffb36b"}, {"name": "FOREST", "background": "#102c2b", "cell": "#1d4840", "accent": "#75e0b0"}]
 
 var board: Array = []
 var obstacle_hp: Array = []
@@ -21,6 +23,12 @@ var tray_pieces: Array = []
 var selected_piece := -1
 var score := 0
 var best_score := 0
+var coins := 0
+var selected_theme := 0
+var last_daily_claim := ""
+var daily_reward_label: Label
+var shop_label: Label
+var theme_button: Button
 var board_grid: GridContainer
 var tray_container: HBoxContainer
 var score_label: Label
@@ -37,6 +45,7 @@ var line_target := 3
 
 func _ready() -> void:
 	randomize()
+	_load_save()
 	_build_board()
 	_build_ui()
 	_new_game()
@@ -60,8 +69,23 @@ func _build_ui() -> void:
 	score_label = Label.new()
 	score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	score_label.add_theme_font_size_override("font_size", 22)
-	score_label.add_theme_color_override("font_color", Color("#65d8ff"))
+	score_label.add_theme_color_override("font_color", Color(THEME_PALETTES[selected_theme].accent))
 	root.add_child(score_label)
+
+	daily_reward_label = Label.new()
+	daily_reward_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	root.add_child(daily_reward_label)
+	var reward_button := Button.new()
+	reward_button.text = "CLAIM DAILY REWARD"
+	reward_button.pressed.connect(_claim_daily_reward)
+	root.add_child(reward_button)
+	shop_label = Label.new()
+	shop_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	root.add_child(shop_label)
+	theme_button = Button.new()
+	theme_button.text = "THEME SHOP — NEXT THEME"
+	theme_button.pressed.connect(_buy_or_select_theme)
+	root.add_child(theme_button)
 
 	status_label = Label.new()
 	status_label.text = "Choose a piece, then tap the board"
@@ -74,7 +98,7 @@ func _build_ui() -> void:
 	board_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	board_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color("#111a31")
+	panel_style.bg_color = Color(THEME_PALETTES[selected_theme].background)
 	panel_style.set_corner_radius_all(18)
 	panel_style.content_margin_left = 8
 	panel_style.content_margin_right = 8
@@ -147,7 +171,7 @@ func _refresh_board() -> void:
 			elif value >= 0:
 				style.bg_color = COLORS[value % COLORS.size()]
 			else:
-				style.bg_color = Color("#202d49")
+				style.bg_color = Color(THEME_PALETTES[selected_theme].cell)
 			style.set_corner_radius_all(5)
 			cell.add_theme_stylebox_override("normal", style)
 			cell.add_theme_stylebox_override("hover", style)
@@ -200,6 +224,8 @@ func _new_game() -> void:
 	_refresh_board()
 	_refresh_tray()
 	status_label.text = "Choose a piece, then tap the board"
+	_refresh_economy_ui()
+	_save_game()
 
 func _seed_obstacles() -> void:
 	# Fixed starter layout makes early obstacle testing repeatable.
@@ -240,13 +266,16 @@ func _on_cell_pressed(x: int, y: int) -> void:
 		board[y + p.y][x + p.x] = selected_piece % COLORS.size()
 		score += 1
 	_apply_special(piece.special, x, y)
-	_clear_completed_lines()
+	var cleared_lines := _clear_completed_lines()
+	coins += cleared_lines * 5
 	tray_pieces.remove_at(selected_piece)
 	selected_piece = -1
 	if tray_pieces.is_empty():
 		_generate_tray()
 	_refresh_board()
 	_refresh_tray()
+	_save_game()
+	_refresh_economy_ui()
 	if _has_obstacles():
 		status_label.text = "Good move! Clear the remaining obstacles"
 	else:
@@ -327,6 +356,7 @@ func _clear_completed_lines() -> int:
 	score += cleared * 100
 	if cleared > 0:
 		status_label.text = "Line cleared! +%d" % (cleared * 100)
+	return cleared
 
 func _has_obstacles() -> bool:
 	for y in range(BOARD_SIZE):
@@ -338,4 +368,65 @@ func _has_obstacles() -> bool:
 func _update_score() -> void:
 	if score_label:
 		best_score = maxi(best_score, score)
-		score_label.text = "SCORE  %d     BEST  %d" % [score, best_score]
+		score_label.text = "SCORE  %d     BEST  %d     COINS  %d" % [score, best_score, coins]
+
+func _today_key() -> String:
+	var date := Time.get_date_dict_from_system()
+	return "%04d-%02d-%02d" % [date.year, date.month, date.day]
+
+func _claim_daily_reward() -> void:
+	var today := _today_key()
+	if last_daily_claim == today:
+		daily_reward_label.text = "Daily reward already claimed today"
+		return
+	coins += 100
+	last_daily_claim = today
+	daily_reward_label.text = "Daily reward claimed: +100 coins!"
+	_save_game()
+	_refresh_economy_ui()
+
+func _buy_or_select_theme() -> void:
+	var next_theme := (selected_theme + 1) % THEME_PALETTES.size()
+	if next_theme == 0:
+		selected_theme = 0
+	elif coins >= 150:
+		coins -= 150
+		selected_theme = next_theme
+		status_label.text = "%s theme unlocked!" % THEME_PALETTES[selected_theme].name
+	else:
+		status_label.text = "Need 150 coins to unlock this theme"
+		return
+	_apply_theme()
+	_save_game()
+	_refresh_economy_ui()
+
+func _apply_theme() -> void:
+	if score_label:
+		score_label.add_theme_color_override("font_color", Color(THEME_PALETTES[selected_theme].accent))
+	_refresh_board()
+
+func _refresh_economy_ui() -> void:
+	if not is_instance_valid(shop_label):
+		return
+	shop_label.text = "COINS: %d  •  THEME: %s" % [coins, THEME_PALETTES[selected_theme].name]
+	if last_daily_claim == _today_key():
+		daily_reward_label.text = "Daily reward claimed — come back tomorrow"
+	else:
+		daily_reward_label.text = "Daily reward available: 100 coins"
+
+func _save_game() -> void:
+	var config := ConfigFile.new()
+	config.set_value("player", "best_score", best_score)
+	config.set_value("player", "coins", coins)
+	config.set_value("player", "selected_theme", selected_theme)
+	config.set_value("player", "last_daily_claim", last_daily_claim)
+	config.save(SAVE_PATH)
+
+func _load_save() -> void:
+	var config := ConfigFile.new()
+	if config.load(SAVE_PATH) != OK:
+		return
+	best_score = int(config.get_value("player", "best_score", 0))
+	coins = int(config.get_value("player", "coins", 0))
+	selected_theme = clampi(int(config.get_value("player", "selected_theme", 0)), 0, THEME_PALETTES.size() - 1)
+	last_daily_claim = str(config.get_value("player", "last_daily_claim", ""))
