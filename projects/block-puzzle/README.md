@@ -65,3 +65,27 @@ godot --headless --path projects/block-puzzle --script res://tests/run_engine_te
 ```
 
 The test runner is committed but has not yet been executed in a Godot runtime. Do not treat the tests as passing until a real Godot run reports success. Special block functions currently calculate deterministic targets/results; visual effects and full gameplay activation are a later integration milestone.
+
+## Batch 3 — Drag-and-drop gameplay integration
+
+Implemented:
+- Custom-drawn 10×10 board view with responsive cell sizing.
+- Drag start from each available tray piece.
+- Pointer tracking and board-cell preview while dragging.
+- Valid placement preview and invalid placement feedback.
+- Touch and mouse release handling.
+- Integration with the pure board model, seeded piece generator, and scoring rules.
+- Simultaneous line-clear feedback flash.
+- Score/best/combo HUD refresh and game-over dialog.
+- Best score persistence through the local SaveData autoload.
+
+### Validation status
+
+Source files were committed and retrieved from GitHub after commit. A Godot executable was not available in this GitHub connector session, so runtime parsing, touch-device testing, and frame-rate profiling are **not yet verified**. Run the committed Godot headless test workflow and open the project on an Android device before marking this batch fully passed.
+
+### Known next improvements
+
+- Drag pointer offset calibration on physical Android touchscreens.
+- More polished piece preview positioning and animated placement.
+- Line-clear particle effects and score popups.
+- Persist and restore full in-progress board sessions.
