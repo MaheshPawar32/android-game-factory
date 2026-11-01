@@ -1,14 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 namespace Blockverse
 {
     public sealed class GameController : MonoBehaviour
     {
         [SerializeField] private RectTransform boardRoot;
-        [SerializeField] private TMP_Text scoreLabel;
-        [SerializeField] private TMP_Text goalLabel;
+        [SerializeField] private Text scoreLabel;
+        [SerializeField] private Text goalLabel;
         [SerializeField] private Button restartButton;
 
         private BoardModel board;
