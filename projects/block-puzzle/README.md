@@ -45,3 +45,23 @@ The classic board is an early prototype. The other modes, 100 levels, special bl
 ## Android export
 
 Set the Android package identifier to `com.dev.blockverse` in the Godot Android export preset. Configure the Android SDK and matching Godot export templates before building.
+
+## Batch 2 — Core engine foundation
+
+Added pure GDScript engine modules:
+- `scripts/engine/board_model.gd`: 10×10 board, bounds and overlap validation, placement, simultaneous row/column clearing, snapshots, and move availability.
+- `scripts/engine/piece_definitions.gd`: centralized normalized shape catalog.
+- `scripts/engine/piece_generator.gd`: seeded deterministic piece generation and tray creation.
+- `scripts/engine/scoring_rules.gd`: placement points, line bonuses, and capped combo multiplier.
+- `scripts/engine/special_block_resolver.gd`: bounded bomb area, rainbow line targeting, orthogonal lightning cluster, and treasure reward calculation.
+- `tests/run_engine_tests.gd`: dependency-free headless test runner covering core rules.
+
+### Run engine tests
+
+From the repository root with Godot 4.4 installed:
+
+```bash
+godot --headless --path projects/block-puzzle --script res://tests/run_engine_tests.gd
+```
+
+The test runner is committed but has not yet been executed in a Godot runtime. Do not treat the tests as passing until a real Godot run reports success. Special block functions currently calculate deterministic targets/results; visual effects and full gameplay activation are a later integration milestone.
