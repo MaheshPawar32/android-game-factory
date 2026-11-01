@@ -17,6 +17,18 @@ namespace Blockverse
         private bool levelFinished;
         private bool reviveUsed;
         private GameObject pauseOverlay;
+        private Button undoButton;
+        private bool undoUsed;
+        private MoveSnapshot lastMoveSnapshot;
+
+        private sealed class MoveSnapshot
+        {
+            public CellType[,] board;
+            public int score, lines, moves, piecesUsed, combo, coins, randomSeed;
+            public int missionBlocks, missionLines, missionCoins, totalBlocks, totalLines;
+            public readonly List<PieceDefinition> definitions = new List<PieceDefinition>();
+            public readonly List<bool> active = new List<bool>();
+        }
         private GameObject resultOverlay, menuOverlay;
         private bool vibrationEnabled;
         private GameAudio gameAudio;
@@ -73,6 +85,9 @@ namespace Blockverse
         {
             Time.timeScale = 1f;
             reviveUsed = false;
+            undoUsed = false;
+            lastMoveSnapshot = null;
+            if (undoButton != null) undoButton.interactable = false;
             levelFinished = false;
             if (resultOverlay != null) Destroy(resultOverlay);
             if (menuOverlay != null) Destroy(menuOverlay);
@@ -86,6 +101,7 @@ namespace Blockverse
             GenerateTray();
             CreateMenuButton();
             CreatePauseButton();
+            CreateUndoButton();
         }
 
         private void CreateMenuButton()
@@ -117,6 +133,87 @@ namespace Blockverse
             go.GetComponent<Image>().color = new Color(.13f, .2f, .32f, 1);
             go.GetComponent<Button>().onClick.AddListener(PauseGame);
             CreateOverlayText(go.transform, "PAUSE", 22, Vector2.zero, new Vector2(120, 60), Color.white);
+        }
+
+        private void CreateUndoButton()
+        {
+            Canvas canvas = GetCanvas();
+            if (canvas == null) return;
+            Transform existing = canvas.transform.Find("GameUndoButton");
+            if (existing != null) { undoButton = existing.GetComponent<Button>(); return; }
+            var go = new GameObject("GameUndoButton", typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(canvas.transform, false);
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1, 1); rect.anchorMax = new Vector2(1, 1);
+            rect.pivot = new Vector2(1, 1); rect.anchoredPosition = new Vector2(-330, -28);
+            rect.sizeDelta = new Vector2(125, 64);
+            go.GetComponent<Image>().color = new Color(.13f, .2f, .32f, 1);
+            undoButton = go.GetComponent<Button>();
+            undoButton.interactable = false;
+            undoButton.onClick.AddListener(UndoLastMove);
+            CreateOverlayText(go.transform, "UNDO", 22, Vector2.zero, new Vector2(120, 60), Color.white);
+        }
+
+        private void CaptureMoveSnapshot()
+        {
+            if (undoUsed) return;
+            var snapshot = new MoveSnapshot
+            {
+                board = board.CaptureState(),
+                score = score, lines = linesCleared, moves = movesUsed,
+                piecesUsed = piecesUsed, combo = comboStreak, coins = coins,
+                randomSeed = randomSeed,
+                missionBlocks = PlayerPrefs.GetInt("blockverse_mission_blocks", 0),
+                missionLines = PlayerPrefs.GetInt("blockverse_mission_lines", 0),
+                missionCoins = PlayerPrefs.GetInt("blockverse_mission_coins", 0),
+                totalBlocks = PlayerPrefs.GetInt("blockverse_total_blocks", 0),
+                totalLines = PlayerPrefs.GetInt("blockverse_total_lines", 0)
+            };
+            foreach (var piece in trayPieces)
+            {
+                snapshot.definitions.Add(piece != null ? piece.Definition : null);
+                snapshot.active.Add(piece != null && piece.gameObject.activeSelf);
+            }
+            lastMoveSnapshot = snapshot;
+        }
+
+        private void UndoLastMove()
+        {
+            if (undoUsed || lastMoveSnapshot == null || levelFinished || board == null) return;
+            MoveSnapshot snapshot = lastMoveSnapshot;
+            board.RestoreState(snapshot.board);
+            score = snapshot.score; linesCleared = snapshot.lines; movesUsed = snapshot.moves;
+            piecesUsed = snapshot.piecesUsed; comboStreak = snapshot.combo;
+            coins = snapshot.coins; randomSeed = snapshot.randomSeed;
+            PlayerPrefs.SetInt("blockverse_coins", coins);
+            PlayerPrefs.SetInt("blockverse_mission_blocks", snapshot.missionBlocks);
+            PlayerPrefs.SetInt("blockverse_mission_lines", snapshot.missionLines);
+            PlayerPrefs.SetInt("blockverse_mission_coins", snapshot.missionCoins);
+            PlayerPrefs.SetInt("blockverse_total_blocks", snapshot.totalBlocks);
+            PlayerPrefs.SetInt("blockverse_total_lines", snapshot.totalLines);
+            PlayerPrefs.Save();
+
+            foreach (Transform child in trayRoot) Destroy(child.gameObject);
+            trayPieces.Clear();
+            for (int i = 0; i < snapshot.definitions.Count; i++)
+            {
+                if (snapshot.definitions[i] == null) continue;
+                var go = new GameObject("Piece_" + i, typeof(RectTransform), typeof(PieceDragView));
+                go.transform.SetParent(trayRoot, false);
+                var view = go.GetComponent<PieceDragView>();
+                view.Initialize(this, snapshot.definitions[i], trayRoot);
+                go.SetActive(snapshot.active[i]);
+                trayPieces.Add(view);
+            }
+            undoUsed = true;
+            lastMoveSnapshot = null;
+            if (undoButton != null) undoButton.interactable = false;
+            if (resultOverlay != null) { Destroy(resultOverlay); resultOverlay = null; }
+            levelFinished = false;
+            RefreshBoardVisuals();
+            RefreshLabels();
+            if (hintLabel != null) hintLabel.text = "LAST MOVE UNDONE — ONE UNDO USED";
+            CheckGameOver();
         }
 
         private void PauseGame()
@@ -442,11 +539,14 @@ namespace Blockverse
             int y = Mathf.FloorToInt((boardRoot.rect.yMax - local.y) / pitchY);
             x -= piece.Shape.GetLength(1) / 2;
             y -= piece.Shape.GetLength(0) / 2;
-            if (!board.TryPlace(piece.Shape, x, y))
+            if (!board.CanPlace(piece.Shape, x, y))
             {
                 if (hintLabel != null) hintLabel.text = "NOT A VALID POSITION — TRY AGAIN";
                 return false;
             }
+            CaptureMoveSnapshot();
+            board.TryPlace(piece.Shape, x, y);
+            if (undoButton != null && !undoUsed) undoButton.interactable = true;
 
             movesUsed++;
             if (vibrationEnabled) Handheld.Vibrate();
