@@ -104,3 +104,14 @@ Implemented in the classic gameplay path:
 ### Validation status
 
 Special resolution and generation tests were added to the headless test runner. Source commits were retrieved from GitHub. The Godot runtime test workflow has not yet been observed completing, so runtime test status remains **NOT VERIFIED**. Effects are lightweight draw flashes rather than particle-based explosion/chain animations; those are visual polish work for a later batch.
+
+## Custom board dimensions
+
+- Default board: **5 × 5**.
+- User-selectable sizes: **5 × 5 through 10 × 10**.
+- Maximum board: **10 × 10**.
+- The size control is in the Classic gameplay header.
+- Selection is saved locally and used for new sessions.
+- Changing size resets the current board and starts a fresh round.
+- Placement validation, row/column clears, game-over checks, board rendering, snapshots, and special-block target bounds all use the active board dimension.
+- Existing saves migrate to a default board size of 5; invalid stored values are clamped to 5–10.
