@@ -21,7 +21,9 @@ This is a **separate migration copy**. The original Unity project remains untouc
 - [x] Initial 8×8 board, piece selection, placement, and row/column clear prototype.
 - [x] Special pieces (Bomb, Rainbow, Lightning) and Stone/Ice obstacles.
 - [x] Level line objectives, move limits, every-fifth-level boss objective, win/retry/next-level flow.
-- [ ] Persistent progression, daily rewards, shop/themes, missions, achievements, pause, revive, undo, audio, haptics and drag-and-drop.
+- [x] Local save for best score, coins, selected theme and daily reward claim date.
+- [x] Daily 100-coin reward and basic 3-theme palette shop.
+- [ ] Persistent level/board progression, full shop inventory, missions, achievements, pause, revive, undo, audio, haptics and drag-and-drop.
 - [ ] Android Editor import and runtime validation.
 - [ ] GABE setup and APK export verification.
 
