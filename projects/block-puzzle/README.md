@@ -115,3 +115,20 @@ Special resolution and generation tests were added to the headless test runner. 
 - Changing size resets the current board and starts a fresh round.
 - Placement validation, row/column clears, game-over checks, board rendering, snapshots, and special-block target bounds all use the active board dimension.
 - Existing saves migrate to a default board size of 5; invalid stored values are clamped to 5–10.
+
+## Batch 5 — Game flow and adventure screens
+
+Implemented:
+- In-game pause control and pause dialog with resume behavior.
+- Improved round-over results showing final and best score, plus replay.
+- First-launch tutorial covering placement, line clears, combos, and special blocks; completion is saved locally.
+- Treasure reward popup after coin rewards are granted.
+- Adventure world map with four world cards and unlock-state presentation.
+- Level selection grid with 12 levels and locked/unlocked states.
+- Level launch saves the selected level and activates adventure objective mode.
+- Adventure gameplay tracks cleared lines against a level objective; completion unlocks the next level, grants a coin reward, and opens the victory dialog.
+- Home-screen Adventure card now opens the world map directly.
+
+### Validation status
+
+The screen scripts and scene/router changes are committed and available in the repository. Godot runtime parsing, scene navigation, input behavior, and Android device layout have **not been executed or verified** in this session. The world map currently presents four themed world cards with the first world playable; world-specific progression and art assets remain future polish.
