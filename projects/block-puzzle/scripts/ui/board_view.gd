@@ -6,10 +6,13 @@ signal pointer_released(local_position: Vector2)
 
 const GAP := 5.0
 const INSET := 8.0
-const COLORS: Array[Color] = [
-	Color("#20C8D9"), Color("#7657F6"), Color("#FFB547"),
-	Color("#FF658B"), Color("#55D68B"), Color("#62A7FF")
-]
+func _active_colors() -> Array[Color]:
+	var skin_id := SaveData.selected_skin()
+	var skin: Dictionary = SaveData.BOARD_SKINS.get(skin_id, SaveData.BOARD_SKINS["classic"])
+	var colors: Array[Color] = []
+	for hex in skin.colors:
+		colors.append(Color(str(hex)))
+	return colors
 
 var board_model: RefCounted
 var preview_shape: Array[Vector2i] = []
@@ -113,7 +116,8 @@ func _draw() -> void:
 			var value: int = board_model.get_cell(x, y)
 			var fill := Color("#202B45")
 			if value != -1:
-				fill = COLORS[posmod(value, COLORS.size())]
+				var palette := _active_colors()
+				fill = palette[posmod(value, palette.size())]
 			if _clear_flash > 0.0 and ((y in last_cleared_rows) or (x in last_cleared_columns)):
 				fill = fill.lerp(Color.WHITE, _clear_flash * 0.75)
 			if _special_flash > 0.0 and Vector2i(x, y) in _special_flash_cells:
