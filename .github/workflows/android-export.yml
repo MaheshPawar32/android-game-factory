@@ -43,7 +43,7 @@ jobs:
           PROJECT_DIR: ${{ inputs.project_path || 'projects/block-puzzle' }}
         run: |
           set -euo pipefail
-          curl -fsSL -o /tmp/godot-templates.tpz https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz
+          wget -q -O /tmp/godot-templates.tpz https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz
           mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
           unzip -q /tmp/godot-templates.tpz -d /tmp/godot-templates
           cp -R /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
