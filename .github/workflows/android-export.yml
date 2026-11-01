@@ -1,17 +1,16 @@
-name: Android Export
+name: BLOCKVERSE Android APK
 
 on:
+  push:
+    paths:
+      - "projects/block-puzzle/**"
+      - ".github/workflows/android-export.yml"
   workflow_dispatch:
     inputs:
       project_path:
-        description: "Path to the Godot project folder"
+        description: "Godot project folder"
         required: true
-        default: "projects/my-game"
-        type: string
-      export_preset:
-        description: "Exact Android export preset name"
-        required: true
-        default: "Android"
+        default: "projects/block-puzzle"
         type: string
 
 permissions:
@@ -19,7 +18,7 @@ permissions:
 
 jobs:
   export:
-    name: Export APK and AAB
+    name: Export BLOCKVERSE APK
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.4.1
@@ -27,49 +26,36 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Validate project
+      - name: Validate Android project
         shell: bash
+        env:
+          PROJECT_DIR: ${{ inputs.project_path || 'projects/block-puzzle' }}
         run: |
           set -euo pipefail
-          PROJECT_DIR="${{ inputs.project_path }}"
-          if [[ ! -f "$PROJECT_DIR/project.godot" ]]; then
-            echo "::error::No project.godot found at $PROJECT_DIR"
-            exit 1
-          fi
-          if [[ ! -f "$PROJECT_DIR/export_presets.cfg" ]]; then
-            echo "::error::Missing export_presets.cfg. Configure an Android preset in Godot first."
-            exit 1
-          fi
+          test -f "$PROJECT_DIR/project.godot"
+          test -f "$PROJECT_DIR/export_presets.cfg"
+          grep -q 'package/unique_name="com.dev.blockverse"' "$PROJECT_DIR/export_presets.cfg"
           mkdir -p "$PROJECT_DIR/build"
 
-      - name: Import project resources
+      - name: Import Godot resources
         shell: bash
+        env:
+          PROJECT_DIR: ${{ inputs.project_path || 'projects/block-puzzle' }}
+        run: godot --headless --editor --path "$PROJECT_DIR" --quit
+
+      - name: Export debug APK
+        shell: bash
+        env:
+          PROJECT_DIR: ${{ inputs.project_path || 'projects/block-puzzle' }}
         run: |
           set -euo pipefail
-          godot --headless --editor --path "${{ inputs.project_path }}" --quit
+          godot --headless --path "$PROJECT_DIR" --export-debug "Android" "$PROJECT_DIR/build/BLOCKVERSE.apk"
+          test -s "$PROJECT_DIR/build/BLOCKVERSE.apk"
 
-      - name: Export APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          godot --headless --path "${{ inputs.project_path }}" \
-            --export-debug "${{ inputs.export_preset }}" \
-            "${{ inputs.project_path }}/build/game.apk"
-
-      - name: Export AAB
-        shell: bash
-        run: |
-          set -euo pipefail
-          godot --headless --path "${{ inputs.project_path }}" \
-            --export-release "${{ inputs.export_preset }}" \
-            "${{ inputs.project_path }}/build/game.aab"
-
-      - name: Upload Android packages
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-build
-          path: |
-            ${{ inputs.project_path }}/build/game.apk
-            ${{ inputs.project_path }}/build/game.aab
+          name: BLOCKVERSE-Android-APK
+          path: ${{ inputs.project_path || 'projects/block-puzzle' }}/build/BLOCKVERSE.apk
           if-no-files-found: error
           retention-days: 14
