@@ -109,6 +109,7 @@ func _draw() -> void:
 	var count := _grid_size()
 	var cell := _cell_size()
 	var step := cell + GAP
+	var palette := _active_colors()
 	for y in range(count):
 		for x in range(count):
 			var origin := _board_origin()
@@ -116,7 +117,6 @@ func _draw() -> void:
 			var value: int = board_model.get_cell(x, y)
 			var fill := Color("#202B45")
 			if value != -1:
-				var palette := _active_colors()
 				fill = palette[posmod(value, palette.size())]
 			if _clear_flash > 0.0 and ((y in last_cleared_rows) or (x in last_cleared_columns)):
 				fill = fill.lerp(Color.WHITE, _clear_flash * 0.75)
