@@ -34,6 +34,7 @@ namespace Blockverse
             score = 0;
             piecesUsed = 0;
             randomSeed = config.Seed;
+            PlaceLevelObstacles();
             RefreshLabels();
             BuildBoard();
             GenerateTray();
@@ -56,6 +57,24 @@ namespace Blockverse
                 var tile = new GameObject($"Cell_{x}_{y}", typeof(RectTransform), typeof(Image));
                 tile.transform.SetParent(boardRoot, false);
                 tile.GetComponent<Image>().color = new Color(0.13f, 0.17f, 0.24f, 1f);
+            }
+            RefreshBoardVisuals();
+        }
+
+        private void PlaceLevelObstacles()
+        {
+            if (config.ObstacleCount <= 0) return;
+            var random = new System.Random(config.Seed ^ 0x5F3759DF);
+            int placed = 0;
+            int attempts = config.ObstacleCount * 12;
+            while (placed < config.ObstacleCount && attempts-- > 0)
+            {
+                int x = random.Next(board.Width);
+                int y = random.Next(board.Height);
+                if (board.GetCell(x, y) != CellType.Empty) continue;
+                var type = random.Next(2) == 0 ? CellType.Stone : CellType.Ice;
+                board.SetObstacle(x, y, type);
+                placed++;
             }
         }
 
