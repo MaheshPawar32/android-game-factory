@@ -3,19 +3,14 @@ extends Control
 const BoardModel = preload("res://scripts/engine/board_model.gd")
 const PieceGenerator = preload("res://scripts/engine/piece_generator.gd")
 const ScoringRules = preload("res://scripts/engine/scoring_rules.gd")
+const SpecialResolver = preload("res://scripts/engine/special_block_resolver.gd")
 const BoardViewScript = preload("res://scripts/ui/board_view.gd")
-
-const BLOCK_COLORS: Array[Color] = [
-	Color("#20C8D9"), Color("#7657F6"), Color("#FFB547"),
-	Color("#FF658B"), Color("#55D68B"), Color("#62A7FF")
-]
 
 var board: RefCounted
 var generator: RefCounted
 var pieces: Array[Dictionary] = []
 var selected_piece := -1
 var drag_active := false
-var drag_origin := Vector2.ZERO
 var score := 0
 var combo := 0
 var best_score := 0
@@ -33,6 +28,7 @@ func _ready() -> void:
 	board = BoardModel.new()
 	generator = PieceGenerator.new()
 	generator.randomize_seed()
+	best_score = int(SaveData.get_value("best_score", 0))
 	_build_ui()
 	_new_game()
 
@@ -74,7 +70,7 @@ func _build_ui() -> void:
 	stats.add_theme_constant_override("separation", 10)
 	layout.add_child(stats)
 	score_label = _stat("SCORE", "0")
-	best_label = _stat("BEST", "0")
+	best_label = _stat("BEST", str(best_score))
 	combo_label = _stat("COMBO", "—")
 	stats.add_child(_stat_card("SCORE", score_label))
 	stats.add_child(_stat_card("BEST", best_label))
@@ -182,7 +178,9 @@ func _refresh_tray() -> void:
 	tray_buttons.clear()
 	for i in range(pieces.size()):
 		var piece: Dictionary = pieces[i]
-		var button := _button(_piece_text(piece.cells), Color("#202943"))
+		var special_type := str(piece.get("special_type", "normal"))
+		var prefix := _special_icon(special_type)
+		var button := _button(prefix + _piece_text(piece.cells), _special_color(special_type))
 		button.custom_minimum_size = Vector2(1, 112)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 18)
@@ -214,6 +212,22 @@ func _piece_text(shape: Array) -> String:
 			output += "\n"
 	return output
 
+func _special_icon(special_type: String) -> String:
+	match special_type:
+		"bomb": return "💣\n"
+		"rainbow": return "🌈\n"
+		"lightning": return "⚡\n"
+		"treasure": return "💎\n"
+		_: return ""
+
+func _special_color(special_type: String) -> Color:
+	match special_type:
+		"bomb": return Color("#573044")
+		"rainbow": return Color("#3B315F")
+		"lightning": return Color("#51431F")
+		"treasure": return Color("#234D50")
+		_: return Color("#202943")
+
 func _on_piece_tap(index: int) -> void:
 	if game_over or pieces[index].is_empty():
 		return
@@ -226,32 +240,30 @@ func _on_piece_gui_input(event: InputEvent, index: int) -> void:
 	if game_over or pieces[index].is_empty():
 		return
 	if event is InputEventScreenTouch and event.pressed:
-		_start_drag(index, event.position)
+		_start_drag(index)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		_start_drag(index, event.position)
+		_start_drag(index)
 	elif event is InputEventMouseMotion and drag_active:
 		_update_drag_from_screen(event.global_position)
 	elif event is InputEventScreenDrag and drag_active:
 		_update_drag_from_screen(event.position)
 
-func _start_drag(index: int, pointer_position: Vector2) -> void:
+func _start_drag(index: int) -> void:
 	selected_piece = index
 	drag_active = true
-	drag_origin = pointer_position
 	_set_status("Release over the board to place.")
 	for i in range(tray_buttons.size()):
 		tray_buttons[i].scale = Vector2.ONE
 	tray_buttons[index].scale = Vector2(1.06, 1.06)
 
 func _update_drag_from_screen(screen_position: Vector2) -> void:
-	if not drag_active:
+	if not drag_active or selected_piece < 0:
 		return
 	var local := board_view.get_global_transform_with_canvas().affine_inverse() * screen_position
 	if board_view.is_inside_board(local):
 		var cell: Vector2i = board_view.cell_from_position(local)
 		var shape: Array[Vector2i] = pieces[selected_piece].cells
-		var valid: bool = board.can_place(shape, cell)
-		board_view.set_preview(shape, cell, valid)
+		board_view.set_preview(shape, cell, board.can_place(shape, cell))
 	else:
 		board_view.clear_preview()
 
@@ -274,26 +286,41 @@ func _on_board_pointer_released(local_position: Vector2) -> void:
 	_finish_drag()
 
 func _try_place_selected(origin: Vector2i) -> void:
-	var shape: Array[Vector2i] = pieces[selected_piece].cells
+	var selected: Dictionary = pieces[selected_piece]
+	var shape: Array[Vector2i] = selected.cells
 	if not board.can_place(shape, origin):
 		_set_status("That placement doesn't fit. Try another position.")
 		return
-	var result: Dictionary = board.place(shape, origin, int(pieces[selected_piece].color_id))
+	var result: Dictionary = board.place(shape, origin, int(selected.color_id))
 	score += ScoringRules.placement_points(shape.size())
 	pieces[selected_piece] = {}
 	selected_piece = -1
+
+	var special_type := str(selected.get("special_type", "normal"))
+	var special_result: Dictionary = {"cells": [], "coins": 0, "message": ""}
+	if special_type != "normal":
+		special_result = SpecialResolver.resolve(board, special_type, origin)
+		if int(special_result.coins) > 0:
+			SaveData.add_coins(int(special_result.coins))
+		_set_status(str(special_result.message))
+		if special_type == "bomb" or special_type == "rainbow" or special_type == "lightning":
+			score += int(special_result.cells.size()) * 5
+	else:
+		_set_status("Nice placement. Build your next clear.")
+
 	var cleared: int = int(result.lines_cleared)
 	if cleared > 0:
 		combo += 1
 		score += ScoringRules.line_points(cleared, combo)
 		board_view.flash_lines(result.cleared_rows, result.cleared_columns)
-		_set_status("LINE CLEAR!  %d lines  •  COMBO x%d" % [cleared, combo])
-	else:
+		_set_status("LINE CLEAR! %d lines  •  COMBO x%d" % [cleared, combo])
+	elif special_type == "normal":
 		combo = 0
-		_set_status("Nice placement. Build your next clear.")
+
 	if score > best_score:
 		best_score = score
 		SaveData.set_value("best_score", best_score)
+
 	if _all_pieces_used():
 		pieces = generator.next_tray(3)
 	_refresh_all()
