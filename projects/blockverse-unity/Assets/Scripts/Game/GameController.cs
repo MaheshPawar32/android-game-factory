@@ -282,7 +282,8 @@ namespace Blockverse
         {
             if (boardRoot == null) return;
             foreach (Transform tile in boardRoot)
-                StartCoroutine(PulseTile(tile));
+                if (tile.name.StartsWith("Cell_"))
+                    StartCoroutine(PulseTile(tile));
         }
 
         private IEnumerator PulseTile(Transform tile)
@@ -478,8 +479,13 @@ namespace Blockverse
             int index = 0;
             foreach (Transform child in boardRoot)
             {
+                // Only actual grid cells belong to the board model. UI effects or
+                // decorative children must never shift the model-to-view indexing.
+                if (!child.name.StartsWith("Cell_")) continue;
+                if (index >= board.Width * board.Height) break;
                 int x = index % board.Width, y = index / board.Width;
                 var image = child.GetComponent<Image>();
+                if (image == null) { index++; continue; }
                 switch (board.GetCell(x, y))
                 {
                     case CellType.Normal: image.color = new Color(.24f, .63f, 1); break;
