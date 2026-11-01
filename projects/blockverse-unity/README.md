@@ -7,27 +7,23 @@
 - Orientation: Portrait
 
 ## Implemented foundation
+- Grid board with touch drag-and-drop placement and three-piece tray.
+- Special pieces: Bomb damages a 3×3 area, Rainbow damages a row, and Lightning damages a column.
+- Special pieces appear occasionally and use distinct colors in the tray.
+- Stone breaks in one hit; ice requires two hits from line clears or special effects.
+- Simultaneous row/column clearing and score calculation.
+- Best score and coins persist locally with PlayerPrefs.
+- Deterministic obstacles and procedural level configuration.
+- Editor setup menu creates the starter scene and configures Android identity/build scene.
 
-- Grid board model with validated block placement.
-- Touch/pointer drag-and-drop piece tray with three pieces per turn.
-- Full row and column clearing, including simultaneous line handling.
-- Stone obstacles and two-hit ice obstacles.
-- Deterministic obstacle placement based on the level seed.
-- Procedural level configuration with regular, move-limited, score-trial, and boss goal types.
-- Starter piece shape library.
-- Score and status feedback.
-- Editor menu command that creates the starter scene and configures Android identity and build scene.
-
-## Create and play the starter scene
-
+## Create and play
 1. Open this folder in Unity 6.0.60f1.
 2. Wait for package import and C# compilation.
-3. Choose **BLOCKVERSE → Setup Starter Scene** from the Unity menu.
+3. Choose **BLOCKVERSE → Setup Starter Scene**.
 4. Open `Assets/Scenes/Game.unity` and press Play.
-5. Drag one of the three pieces from the tray onto the board. Invalid placements return the piece to its tray slot.
+5. Drag pieces onto the board. Special colors: red = Bomb, purple = Rainbow, yellow = Lightning.
 
-The current playable foundation is an early prototype. Full progression, objectives, special blocks, missions, shop, persistence, polished animation/audio, and release-ready UI are still to be implemented.
+This is still an early playable prototype. Objective completion, win/game-over screens, polished animations/audio, missions, shop, and release-ready UI remain future work.
 
 ## Android build
-
-Use the repository workflow **BLOCKVERSE Unity Android** after adding the Unity licensing secrets described in the repository README. Test the resulting build on a physical Android device before release.
+Use the **BLOCKVERSE Unity Android** workflow after configuring Unity licensing secrets in GitHub. Validate on a physical Android device before release.
