@@ -221,7 +221,7 @@ func _new_game() -> void:
 	level_lines = 0
 	mode_time_left = 90.0
 	mode_misses = 0
-	level_objective = 3 + int(SaveData.get_value("current_level", 1)) / 4
+	level_objective = 3 + int((int(SaveData.get_value("current_level", 1)) - 1) / 4)
 	pieces = generator.next_tray(3)
 	_refresh_all()
 	_set_status("Drag a shape onto the board.")
