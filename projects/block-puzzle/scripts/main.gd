@@ -20,6 +20,11 @@ var game_over := false
 var paused := false
 var level_lines := 0
 var level_objective := 3
+var level_config: Dictionary = {}
+var level_moves_left := 0
+var level_move_limit := 0
+var level_target_score := 0
+var level_objective_type := "lines"
 var active_mode := "classic"
 var mode_time_left := 90.0
 var mode_misses := 0
@@ -227,13 +232,21 @@ func _new_game() -> void:
 	mode_time_left = 90.0
 	mode_misses = 0
 	if bool(SaveData.get_value("adventure_active", false)):
-		var level_config: Dictionary = LevelData.configuration(int(SaveData.get_value("current_level", 1)))
+		level_config = LevelData.configuration(int(SaveData.get_value("current_level", 1)))
 		level_objective = int(level_config.objective_lines)
+		level_objective_type = str(level_config.objective_type)
+		level_move_limit = int(level_config.move_limit)
+		level_moves_left = level_move_limit
+		level_target_score = int(level_config.target_score)
 	else:
 		level_objective = 3
+		level_objective_type = "lines"
+		level_move_limit = 0
+		level_moves_left = 0
+		level_target_score = 0
 	pieces = generator.next_tray(3)
 	_refresh_all()
-	_set_status("Drag a shape onto the board.")
+	_set_status(_level_goal_text())
 
 func _refresh_all() -> void:
 	board_view.set_board(board)
@@ -387,6 +400,8 @@ func _try_place_selected(origin: Vector2i) -> void:
 		Feedback.vibrate(18)
 		return
 	var result: Dictionary = board.place(shape, origin, int(selected.color_id))
+	if bool(SaveData.get_value("adventure_active", false)) and level_move_limit > 0:
+		level_moves_left = maxi(0, level_moves_left - 1)
 	board_view.animate_placement(result.placed)
 	Feedback.play("place")
 	Feedback.vibrate(22)
@@ -439,8 +454,11 @@ func _try_place_selected(origin: Vector2i) -> void:
 	if active_mode == "daily" and score >= 600:
 		_finish_mode("DAILY CHALLENGE COMPLETE!", "You reached today’s 600-point target.")
 		return
-	if bool(SaveData.get_value("adventure_active", false)) and level_lines >= level_objective:
+	if bool(SaveData.get_value("adventure_active", false)) and _level_goal_complete():
 		_show_victory_screen()
+		return
+	if bool(SaveData.get_value("adventure_active", false)) and level_move_limit > 0 and level_moves_left <= 0:
+		_show_level_failed()
 		return
 	if score > best_score:
 		best_score = score
@@ -458,6 +476,31 @@ func _try_place_selected(origin: Vector2i) -> void:
 			_finish_mode("DAILY CHALLENGE ENDED", "Score: %d / 600" % score)
 		else:
 			_show_game_over()
+
+func _level_goal_text() -> String:
+	if level_objective_type == "score":
+		return "SCORE TRIAL • REACH %d POINTS" % level_target_score
+	if level_objective_type == "boss":
+		return "BOSS LEVEL • CLEAR %d LINES • %d MOVES" % [level_objective, level_moves_left]
+	if level_move_limit > 0:
+		return "CLEAR %d LINES • %d MOVES LEFT" % [level_objective, level_moves_left]
+	return "CLEAR %d LINES TO WIN" % level_objective
+
+func _level_goal_complete() -> bool:
+	if level_objective_type == "score":
+		return score >= level_target_score
+	return level_lines >= level_objective
+
+func _show_level_failed() -> void:
+	paused = true
+	game_over = true
+	var dialog := AcceptDialog.new()
+	dialog.title = "CHALLENGE FAILED"
+	dialog.dialog_text = "Moves used up!\nLines cleared: %d / %d\nScore: %d\n\nTry this level again." % [level_lines, level_objective, score]
+	dialog.ok_button_text = "RETRY LEVEL"
+	dialog.confirmed.connect(func(): _new_game())
+	add_child(dialog)
+	dialog.popup_centered()
 
 func _finish_drag() -> void:
 	drag_active = false
@@ -560,11 +603,13 @@ func _show_victory_screen() -> void:
 	var level_config: Dictionary = LevelData.configuration(current)
 	var reward := int(level_config.reward_coins)
 	var stars := 3 if score >= 600 else (2 if score >= 300 else 1)
+	if level_move_limit > 0 and level_moves_left > 0:
+		stars = mini(3, stars + 1)
 	SaveData.record_level_completion(current, score, stars)
 	SaveData.add_coins(reward, "Adventure level %d" % current)
 	var dialog := AcceptDialog.new()
 	dialog.title = "LEVEL COMPLETE!"
-	dialog.dialog_text = "Objective completed!\nLines cleared: %d / %d\n%s\nLevel %d unlocked next.\n\nReward: %d coins" % [level_lines, level_objective, "★".repeat(stars), next_level, reward]
+	dialog.dialog_text = "Objective completed!\n%s\nLines cleared: %d / %d\n%s\nLevel %d unlocked next.\n\nReward: %d coins" % [_level_goal_text(), level_lines, level_objective, "★".repeat(stars), next_level, reward]
 	dialog.ok_button_text = "CONTINUE"
 	dialog.confirmed.connect(func(): AppRouter.open_level_select())
 	add_child(dialog)
