@@ -15,6 +15,7 @@ namespace Blockverse
         private LevelConfig config;
         private readonly List<PieceDragView> trayPieces = new List<PieceDragView>();
         private bool levelFinished;
+        private bool levelWon;
         private bool reviveUsed;
         private GameObject pauseOverlay;
         private Button undoButton;
@@ -89,6 +90,7 @@ namespace Blockverse
             lastMoveSnapshot = null;
             if (undoButton != null) undoButton.interactable = false;
             levelFinished = false;
+            levelWon = false;
             if (resultOverlay != null) Destroy(resultOverlay);
             if (menuOverlay != null) Destroy(menuOverlay);
             config = LevelGenerator.Generate(level);
@@ -179,7 +181,7 @@ namespace Blockverse
 
         private void UndoLastMove()
         {
-            if (undoUsed || lastMoveSnapshot == null || levelFinished || board == null) return;
+            if (undoUsed || lastMoveSnapshot == null || levelWon || board == null) return;
             MoveSnapshot snapshot = lastMoveSnapshot;
             board.RestoreState(snapshot.board);
             score = snapshot.score; linesCleared = snapshot.lines; movesUsed = snapshot.moves;
@@ -677,6 +679,7 @@ namespace Blockverse
         {
             if (levelFinished) return;
             levelFinished = true;
+            levelWon = true;
             gameAudio.PlayWin();
             int reward = 20 + level * 2;
             coins += reward;
@@ -694,6 +697,7 @@ namespace Blockverse
         {
             if (levelFinished) return;
             levelFinished = true;
+            levelWon = false;
             gameAudio.PlayFail();
             ShowResult(false, "TRY AGAIN", $"{reason}\nProgress: {ObjectiveText()}\nScore: {score:N0}");
         }
@@ -720,6 +724,8 @@ namespace Blockverse
             CreateOverlayButton(card.transform, won ? "NEXT LEVEL" : "RETRY", new Vector2(0, -115), won ? (UnityEngine.Events.UnityAction)GoToNextLevel : StartLevel);
             if (!won && !reviveUsed && coins >= 50)
                 CreateOverlayButton(card.transform, "REVIVE • 50 COINS", new Vector2(0, -215), ReviveLevel);
+            if (!won && !undoUsed && lastMoveSnapshot != null)
+                CreateOverlayButton(card.transform, "UNDO LAST MOVE", new Vector2(0, -315), UndoLastMove);
         }
 
         private void CreateOverlayText(Transform parent, string value, int size, Vector2 position, Vector2 dimensions, Color color)
