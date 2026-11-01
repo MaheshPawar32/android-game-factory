@@ -5,6 +5,7 @@ const PieceGenerator = preload("res://scripts/engine/piece_generator.gd")
 const ScoringRules = preload("res://scripts/engine/scoring_rules.gd")
 const SpecialResolver = preload("res://scripts/engine/special_block_resolver.gd")
 const BoardViewScript = preload("res://scripts/ui/board_view.gd")
+const LevelData = preload("res://scripts/engine/level_generator.gd")
 
 var board: RefCounted
 var generator: RefCounted
@@ -39,6 +40,8 @@ func _ready() -> void:
 	generator = PieceGenerator.new()
 	if active_mode == "daily":
 		generator.set_seed(int(SaveData.get_value("daily_seed", 1)))
+	elif bool(SaveData.get_value("adventure_active", false)):
+		generator.set_seed(int(LevelData.configuration(int(SaveData.get_value("current_level", 1))).seed))
 	else:
 		generator.randomize_seed()
 	best_score = int(SaveData.get_value("best_score", 0))
@@ -211,6 +214,8 @@ func _show_board_size_picker() -> void:
 func _new_game() -> void:
 	if active_mode == "daily":
 		generator.set_seed(int(SaveData.get_value("daily_seed", 1)))
+	elif bool(SaveData.get_value("adventure_active", false)):
+		generator.set_seed(int(LevelData.configuration(int(SaveData.get_value("current_level", 1))).seed))
 	board.reset()
 	score = 0
 	combo = 0
@@ -221,7 +226,11 @@ func _new_game() -> void:
 	level_lines = 0
 	mode_time_left = 90.0
 	mode_misses = 0
-	level_objective = 3 + int((int(SaveData.get_value("current_level", 1)) - 1) / 4)
+	if bool(SaveData.get_value("adventure_active", false)):
+		var level_config: Dictionary = LevelData.configuration(int(SaveData.get_value("current_level", 1)))
+		level_objective = int(level_config.objective_lines)
+	else:
+		level_objective = 3
 	pieces = generator.next_tray(3)
 	_refresh_all()
 	_set_status("Drag a shape onto the board.")
@@ -548,11 +557,14 @@ func _show_victory_screen() -> void:
 	var next_level := current + 1
 	SaveData.set_value("unlocked_level", maxi(int(SaveData.get_value("unlocked_level", 1)), next_level))
 	SaveData.set_value("unlocked_world", clampi(int(ceil(float(next_level) / 12.0)), 1, 4))
-	var reward := 50 + current * 5
+	var level_config: Dictionary = LevelData.configuration(current)
+	var reward := int(level_config.reward_coins)
+	var stars := 3 if score >= 600 else (2 if score >= 300 else 1)
+	SaveData.record_level_completion(current, score, stars)
 	SaveData.add_coins(reward, "Adventure level %d" % current)
 	var dialog := AcceptDialog.new()
 	dialog.title = "LEVEL COMPLETE!"
-	dialog.dialog_text = "Objective completed!\nLines cleared: %d / %d\nLevel %d unlocked next.\n\nReward: %d coins" % [level_lines, level_objective, next_level, reward]
+	dialog.dialog_text = "Objective completed!\nLines cleared: %d / %d\n%s\nLevel %d unlocked next.\n\nReward: %d coins" % [level_lines, level_objective, "★".repeat(stars), next_level, reward]
 	dialog.ok_button_text = "CONTINUE"
 	dialog.confirmed.connect(func(): AppRouter.open_level_select())
 	add_child(dialog)
