@@ -116,7 +116,11 @@ func _draw() -> void:
 			var rect := Rect2(origin + Vector2(x * step, y * step), Vector2(cell, cell))
 			var value: int = board_model.get_cell(x, y)
 			var fill := Color("#202B45")
-			if value != -1:
+			if value == 90:
+				fill = Color("#687386")
+			elif value == 91:
+				fill = Color("#78CDEB")
+			elif value != -1:
 				fill = palette[posmod(value, palette.size())]
 			if _clear_flash > 0.0 and ((y in last_cleared_rows) or (x in last_cleared_columns)):
 				fill = fill.lerp(Color.WHITE, _clear_flash * 0.75)
@@ -126,6 +130,15 @@ func _draw() -> void:
 				fill = fill.lerp(Color.WHITE, _place_flash * 0.48)
 			draw_rect(rect, fill, true)
 			draw_rect(rect, fill.lightened(0.16) if value != -1 else Color("#33415F"), false, 1.2)
+			if value == 90:
+				draw_line(rect.position + Vector2(cell * 0.22, cell * 0.22), rect.position + Vector2(cell * 0.78, cell * 0.78), Color("#D2D8E2"), 2.0)
+				draw_line(rect.position + Vector2(cell * 0.78, cell * 0.22), rect.position + Vector2(cell * 0.22, cell * 0.78), Color("#D2D8E2"), 2.0)
+			elif value == 91:
+				var center := rect.get_center()
+				draw_line(center + Vector2(0, -cell * 0.28), center + Vector2(cell * 0.22, 0), Color.WHITE, 2.0)
+				draw_line(center + Vector2(cell * 0.22, 0), center + Vector2(0, cell * 0.28), Color.WHITE, 2.0)
+				draw_line(center + Vector2(0, cell * 0.28), center + Vector2(-cell * 0.22, 0), Color.WHITE, 2.0)
+				draw_line(center + Vector2(-cell * 0.22, 0), center + Vector2(0, -cell * 0.28), Color.WHITE, 2.0)
 	if not preview_shape.is_empty() and preview_origin.x >= 0:
 		for offset in preview_shape:
 			var point := preview_origin + offset
