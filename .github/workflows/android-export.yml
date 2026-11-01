@@ -1,0 +1,75 @@
+name: Android Export
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_path:
+        description: "Path to the Godot project folder"
+        required: true
+        default: "projects/my-game"
+        type: string
+      export_preset:
+        description: "Exact Android export preset name"
+        required: true
+        default: "Android"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    name: Export APK and AAB
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate project
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT_DIR="${{ inputs.project_path }}"
+          if [[ ! -f "$PROJECT_DIR/project.godot" ]]; then
+            echo "::error::No project.godot found at $PROJECT_DIR"
+            exit 1
+          fi
+          if [[ ! -f "$PROJECT_DIR/export_presets.cfg" ]]; then
+            echo "::error::Missing export_presets.cfg. Configure an Android preset in Godot first."
+            exit 1
+          fi
+          mkdir -p "$PROJECT_DIR/build"
+
+      - name: Import project resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --editor --path "${{ inputs.project_path }}" --quit
+
+      - name: Export APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path "${{ inputs.project_path }}" \
+            --export-debug "${{ inputs.export_preset }}" \
+            "${{ inputs.project_path }}/build/game.apk"
+
+      - name: Export AAB
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path "${{ inputs.project_path }}" \
+            --export-release "${{ inputs.export_preset }}" \
+            "${{ inputs.project_path }}/build/game.aab"
+
+      - name: Upload Android packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: |
+            ${{ inputs.project_path }}/build/game.apk
+            ${{ inputs.project_path }}/build/game.aab
+          if-no-files-found: error
+          retention-days: 14
