@@ -200,11 +200,11 @@ func _test_board_obstacles() -> void:
 	_check(not board.can_place([Vector2i.ZERO], Vector2i(2, 2)), "stone obstacle blocks piece placement")
 	_check(not board.set_obstacle(2, 2, Board.ICE), "obstacle cannot overwrite occupied cell")
 	_check(board.obstacle_count() == 1 and board.obstacle_count(Board.STONE) == 1, "board counts obstacle types")
+	var obstacle_snapshot: Dictionary = board.to_dictionary()
+	var obstacle_restore = Board.new()
+	_check(obstacle_restore.load_dictionary(obstacle_snapshot) and obstacle_restore.get_cell(2, 2) == Board.STONE, "board snapshot preserves obstacle cell values")
 	for x in range(board.size):
 		if x != 2:
 			board.cells[2][x] = 0
 	var cleared: Dictionary = board.clear_completed_lines()
 	_check(cleared.rows == [2] and board.obstacle_count() == 0, "completed row clears obstacles occupying that row")
-	var snapshot: Dictionary = board.to_dictionary()
-	var restored = Board.new()
-	_check(restored.load_dictionary(snapshot), "board snapshot accepts obstacle cell values")
