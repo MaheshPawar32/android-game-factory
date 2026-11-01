@@ -91,6 +91,7 @@ func refresh_daily_missions() -> void:
 		"clear_lines": 0,
 		"play_games": 0
 	}
+	data["mission_claimed"] = {}
 	save_data()
 
 func record_placement(block_count: int) -> void:
