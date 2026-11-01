@@ -31,7 +31,7 @@ func _build_screen() -> void:
 	top.add_child(player)
 	level_label = _label("PLAYER  •  LV.%d" % int(SaveData.get_value("player_level", 1)), 13, BlockverseTheme.TEXT_MUTED)
 	player.add_child(level_label)
-	var xp := _label("Your puzzle journey starts here", 12, BlockverseTheme.TEXT_MUTED)
+	var xp := _label("%d / %d XP to next level" % [int(SaveData.get_value("player_xp", 0)), SaveData.xp_to_next_level()], 12, BlockverseTheme.TEXT_MUTED)
 	player.add_child(xp)
 	coin_label = _label("🪙  %s" % _format_number(int(SaveData.get_value("coins", 250))), 18, BlockverseTheme.GOLD, true)
 	top.add_child(coin_label)
@@ -68,17 +68,17 @@ func _build_screen() -> void:
 	var daily := _button("📅  DAILY\nCHALLENGE", BlockverseTheme.SURFACE_RAISED, BlockverseTheme.PRIMARY)
 	daily.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	daily.custom_minimum_size.y = 82
-	daily.pressed.connect(func(): _show_coming_soon("Daily Challenge"))
+	daily.pressed.connect(func(): AppRouter.open_progression())
 	cards.add_child(daily)
 
 	var shortcuts := HBoxContainer.new()
 	shortcuts.add_theme_constant_override("separation", 12)
 	layout.add_child(shortcuts)
-	for item in ["MISSIONS", "SHOP", "PROFILE"]:
+	for item in ["MISSIONS", "WALLET", "PROFILE"]:
 		var shortcut := _button(item, BlockverseTheme.SURFACE, BlockverseTheme.SURFACE_RAISED)
 		shortcut.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		shortcut.custom_minimum_size.y = 58
-		shortcut.pressed.connect(func(): _show_coming_soon(item.capitalize()))
+		shortcut.pressed.connect(func(): AppRouter.open_progression())
 		shortcuts.add_child(shortcut)
 
 	var settings := _button("⚙  SETTINGS", BlockverseTheme.SURFACE, BlockverseTheme.SURFACE_RAISED)
