@@ -269,7 +269,7 @@ func _special_color(special_type: String) -> Color:
 		_: return Color("#202943")
 
 func _input(event: InputEvent) -> void:
-	if not drag_active or selected_piece < 0:
+	if paused or game_over or not drag_active or selected_piece < 0:
 		return
 	if event is InputEventScreenDrag:
 		_update_drag_from_screen(event.position)
@@ -343,7 +343,10 @@ func _on_board_pointer_released(local_position: Vector2) -> void:
 		_try_place_selected(cell)
 	_finish_drag()
 
+
 func _try_place_selected(origin: Vector2i) -> void:
+	if paused or game_over or selected_piece < 0:
+		return
 	var selected: Dictionary = pieces[selected_piece]
 	var shape: Array[Vector2i] = selected.cells
 	if not board.can_place(shape, origin):
